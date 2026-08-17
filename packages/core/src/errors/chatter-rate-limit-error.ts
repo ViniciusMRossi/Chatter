@@ -4,7 +4,7 @@ export class ChatterRateLimitError extends ChatterError {
   readonly retryable = true;
   readonly retryAfterMs: number | undefined;
 
-  constructor(message: string, options?: { cause?: unknown; retryAfterMs?: number }) {
+  constructor(message: string, options?: { cause?: unknown; retryAfterMs?: number | undefined }) {
     super(message, options);
     this.retryAfterMs = options?.retryAfterMs;
   }

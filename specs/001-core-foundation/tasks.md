@@ -99,29 +99,29 @@ exactly the expected echo reply.
 
 > Write these tests FIRST, and confirm they fail before implementing.
 
-- [ ] T012 [P] [US1] Write failing unit test for `Chatter` start/stop lifecycle (start is
+- [X] T012 [P] [US1] Write failing unit test for `Chatter` start/stop lifecycle (start is
       idempotent, stop is idempotent, `send()` before `start()` or after `stop()` rejects with
       `ChatterConfigurationError`) in `packages/core/tests/unit/lifecycle.spec.ts`.
-- [ ] T013 [P] [US1] Write failing integration test for the full send/receive round trip
+- [X] T013 [P] [US1] Write failing integration test for the full send/receive round trip
       (register one fake account, start, emit an inbound message, handler sends a reply,
       assert the delivery result shape) in
       `packages/core/tests/integration/round-trip.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Implement `FakeAccountAdapter` (`start`, `stop`, `send`, `getCapabilities`,
+- [X] T014 [US1] Implement `FakeAccountAdapter` (`start`, `stop`, `send`, `getCapabilities`,
       plus test helpers `emitInbound` and `sentMessages`) implementing the `AccountAdapter`
       contract, in `packages/testing/src/fake-account/fake-account-adapter.ts`. Depends on:
       T010.
-- [ ] T015 [US1] Implement the `Chatter` orchestrator's constructor, `start()`/`stop()`
+- [X] T015 [US1] Implement the `Chatter` orchestrator's constructor, `start()`/`stop()`
       lifecycle, and `EventEmitter`-backed `on()`/`off()` inbound dispatch (per research.md's
       event-delivery decision), including minimal structured lifecycle/inbound observability
       events (NFR-008), in `packages/core/src/orchestrator/chatter.ts`. Depends on: T010, T014.
-- [ ] T016 [US1] Implement `Chatter.send()` outbound routing to the correct adapter, returning a
+- [X] T016 [US1] Implement `Chatter.send()` outbound routing to the correct adapter, returning a
       typed `DeliveryResult`, including minimal outbound/error observability events (NFR-008),
       in `packages/core/src/orchestrator/chatter.ts`. Depends on: T015.
-- [ ] T017 [P] [US1] Add `packages/testing/src/index.ts` barrel export. Depends on: T014.
-- [ ] T018 [US1] Run `pnpm -r test` and confirm T012 and T013 now pass.
+- [X] T017 [P] [US1] Add `packages/testing/src/index.ts` barrel export. Depends on: T014.
+- [X] T018 [US1] Run `pnpm -r test` and confirm T012 and T013 now pass.
 
 **Checkpoint**: User Story 1 fully functional and independently testable — this is the MVP.
 
