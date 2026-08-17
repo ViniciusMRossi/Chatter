@@ -38,9 +38,12 @@ class Chatter {
 interface AccountAdapter {
   readonly provider: string;
   getCapabilities(): ReadonlySet<Capability>;
-  start(dispatch: (event: MessageCreatedEvent) => void): Promise<void>;
+  // The adapter doesn't know its own application-level account name — only the
+  // orchestrator does — so it exchanges account-less shapes here; Chatter fills in
+  // `account` before anything reaches application code.
+  start(dispatch: (message: Omit<Message, "account">) => void): Promise<void>;
   stop(): Promise<void>;
-  send(input: SendInput): Promise<DeliveryResult>;
+  send(input: SendInput): Promise<Omit<DeliveryResult, "account">>;
 }
 ```
 
@@ -55,10 +58,20 @@ interface AccountAdapter {
 ## `@chatter/testing` conformance suite
 
 ```ts
-function runAccountConformanceSuite(
-  createAdapter: () => AccountAdapter
-): void; // registers Vitest `describe`/`it` blocks when called inside a test file
+function runAccountConformanceSuite(config: {
+  createAdapter: () => AccountAdapter;
+  // Adapter-specific: makes `adapter` aware of a conversation it can legitimately send
+  // to, and returns that reference. The fake adapter's own test calls emitInbound here;
+  // a future real adapter's test would use a real/sandboxed provider conversation.
+  getKnownConversation: (adapter: AccountAdapter) => Conversation | Promise<Conversation>;
+  getUnknownConversation: () => Conversation;
+}): void; // registers Vitest `describe`/`it` blocks when called inside a test file
 ```
+
+A bare `createAdapter`-only factory (as originally sketched here) turned out not to be
+sufficient: a truly adapter-agnostic suite has no generic way to make an arbitrary adapter
+aware of a conversation it can send to — that's inherently adapter-specific. The config object
+above is what `@chatter/testing` actually implements.
 
 - MUST exercise: capability query (FR-007), send + delivery result shape (FR-006), invalid
   target rejection, unsupported-capability rejection, start/stop idempotency.
@@ -72,7 +85,7 @@ function runAccountConformanceSuite(
 class FakeAccountAdapter implements AccountAdapter {
   constructor(config?: { capabilities?: Capability[] });
   emitInbound(message: Omit<Message, "account">): void; // test helper, not part of AccountAdapter
-  readonly sentMessages: DeliveryResult[]; // test helper — inspect what was "sent"
+  readonly sentMessages: Omit<DeliveryResult, "account">[]; // test helper — inspect what was "sent"
   simulateRateLimit(retryAfterMs?: number): void; // test helper — next send() rejects with ChatterRateLimitError
 }
 ```

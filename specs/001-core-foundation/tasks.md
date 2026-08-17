@@ -228,11 +228,11 @@ fails with a clear assertion, revert.
 
 **Purpose**: Documentation and final verification, once every story above is done.
 
-- [ ] T032 [P] Write `packages/core/README.md` and `packages/testing/README.md` (setup,
+- [X] T032 [P] Write `packages/core/README.md` and `packages/testing/README.md` (setup,
       minimal usage example, link to the public API contract) per NFR-011.
-- [ ] T033 [P] Walk through quickstart.md end-to-end manually and fix any discrepancy found
+- [X] T033 [P] Walk through quickstart.md end-to-end manually and fix any discrepancy found
       between the documented steps and actual behavior.
-- [ ] T034 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm the CI
+- [X] T034 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm the CI
       workflow from T006 will pass before opening the pull request.
 
 ---

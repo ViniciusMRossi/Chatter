@@ -107,9 +107,7 @@ export class Chatter {
     const sendInput: SendInput = {
       conversation: input.conversation,
       text: input.text,
-      ...(input.replyToMessageId !== undefined
-        ? { replyToMessageId: input.replyToMessageId }
-        : {}),
+      ...(input.replyToMessageId !== undefined ? { replyToMessageId: input.replyToMessageId } : {}),
     };
     const result = await adapter.send(sendInput);
     const deliveryResult: DeliveryResult = { ...result, account: input.account };

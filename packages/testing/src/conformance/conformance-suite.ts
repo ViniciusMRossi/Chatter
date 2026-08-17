@@ -15,9 +15,7 @@ export interface ConformanceSuiteConfig {
    * its `emitInbound` test helper; a future real adapter's own conformance test file would
    * supply an equivalent using a real/sandboxed provider conversation.
    */
-  readonly getKnownConversation: (
-    adapter: AccountAdapter,
-  ) => Conversation | Promise<Conversation>;
+  readonly getKnownConversation: (adapter: AccountAdapter) => Conversation | Promise<Conversation>;
   /** A conversation reference the adapter has never seen and must reject as invalid. */
   readonly getUnknownConversation: () => Conversation;
 }

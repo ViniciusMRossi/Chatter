@@ -63,6 +63,8 @@ that `botA.sentMessages` / `botB.sentMessages` never cross-contaminate.
 ## 5. Error-path checks (Story 3)
 
 ```ts
+import { ChatterRateLimitError } from "@chatter/core";
+
 fake.simulateRateLimit(2000);
 await expect(chatter.send({ account: "support-bot", conversation: someConversation, text: "x" }))
   .rejects.toBeInstanceOf(ChatterRateLimitError);
@@ -74,7 +76,25 @@ and a thread-targeted send on an adapter constructed without the `"thread"` capa
 
 ## 6. Conformance suite reusability check (Story 4)
 
-Temporarily modify `FakeAccountAdapter.send()` to omit `conversation` from its returned
-`DeliveryResult`, re-run `pnpm -r test`, and confirm `runAccountConformanceSuite` fails with a
-clear assertion pointing at the missing field. Revert the change afterward — this is a one-time
-manual proof that the suite actually constrains behavior, not a permanent test.
+`runAccountConformanceSuite` takes a config object, not a bare adapter factory — a truly
+adapter-agnostic suite can't know how to make an arbitrary adapter aware of a "known"
+conversation (that's adapter-specific: `emitInbound` for the fake adapter, a real send on a
+sandboxed conversation for a future real one):
+
+```ts
+import { FakeAccountAdapter, runAccountConformanceSuite } from "@chatter/testing";
+
+runAccountConformanceSuite({
+  createAdapter: () => new FakeAccountAdapter({ capabilities: ["text"] }),
+  getKnownConversation: async (adapter) => {
+    /* call adapter.emitInbound(...) (or the real-adapter equivalent) and return
+       the conversation reference it just registered */
+  },
+  getUnknownConversation: () => ({ provider: "fake", providerAccountId: "x", providerConversationId: "never-seen", type: "direct" }),
+});
+```
+
+To prove the suite actually constrains behavior: temporarily modify `FakeAccountAdapter.send()`
+to omit `conversation` from its returned delivery result, re-run `pnpm -r test`, and confirm the
+suite fails with a clear assertion pointing at the missing field. Revert the change afterward —
+this is a one-time manual proof, not a permanent test.

@@ -95,9 +95,7 @@ export class FakeAccountAdapter implements AccountAdapter {
       );
     }
     if (input.replyToMessageId && !this.#knownMessageIds.has(input.replyToMessageId)) {
-      throw new ChatterInvalidTargetError(
-        `unknown message to reply to: ${input.replyToMessageId}`,
-      );
+      throw new ChatterInvalidTargetError(`unknown message to reply to: ${input.replyToMessageId}`);
     }
 
     this.#sentCounter += 1;
