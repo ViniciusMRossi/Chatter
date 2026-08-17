@@ -207,14 +207,14 @@ fails with a clear assertion, revert.
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Implement `runAccountConformanceSuite(createAdapter)` — covering capability
+- [X] T029 [US4] Implement `runAccountConformanceSuite(createAdapter)` — covering capability
       query, send + delivery-result shape, invalid-target rejection, unsupported-capability
       rejection, and start/stop idempotency — per contracts/core-api.md, in
       `packages/testing/src/conformance/conformance-suite.ts`. Depends on: T010, T014, T027,
       T028.
-- [ ] T030 [P] [US4] Add `packages/testing/tests/conformance.spec.ts` calling
+- [X] T030 [P] [US4] Add `packages/testing/tests/conformance.spec.ts` calling
       `runAccountConformanceSuite(() => new FakeAccountAdapter())`. Depends on: T029.
-- [ ] T031 [US4] Manually verify failure detection per quickstart.md §6: temporarily remove
+- [X] T031 [US4] Manually verify failure detection per quickstart.md §6: temporarily remove
       `conversation` from `FakeAccountAdapter.send()`'s returned `DeliveryResult`, re-run
       `pnpm -r test`, confirm `runAccountConformanceSuite` fails with a clear assertion, then
       revert the change. Record the confirmation in the pull request description. Depends on:
