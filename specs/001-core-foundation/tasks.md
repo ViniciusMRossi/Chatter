@@ -30,24 +30,24 @@ plan.md Project Structure).
 
 **Purpose**: Workspace scaffolding — nothing story-specific yet.
 
-- [ ] T001 Create pnpm workspace scaffold: `pnpm-workspace.yaml`, root `package.json` (private,
+- [X] T001 Create pnpm workspace scaffold: `pnpm-workspace.yaml`, root `package.json` (private,
       no publish), `tsconfig.base.json` (strict mode, ESM/`NodeNext` resolution) at repo root;
       create empty `packages/core/` and `packages/testing/` directories. Note: `pnpm` must be on
       `PATH` (activate via `corepack enable && corepack prepare pnpm@latest --activate`, may
       need elevated permission on this machine — see Docs/handoff.md if it was flagged there).
-- [ ] T002 [P] Configure `packages/core/package.json` (`"name": "@chatter/core"`, `"type":
+- [X] T002 [P] Configure `packages/core/package.json` (`"name": "@chatter/core"`, `"type":
       "module"`, `"private": true` for now) and `packages/core/tsconfig.json` extending
       `tsconfig.base.json`.
-- [ ] T003 [P] Configure `packages/testing/package.json` (`"name": "@chatter/testing"`,
+- [X] T003 [P] Configure `packages/testing/package.json` (`"name": "@chatter/testing"`,
       `"type": "module"`, depends on `@chatter/core` via the `workspace:*` protocol) and
       `packages/testing/tsconfig.json` extending `tsconfig.base.json`.
-- [ ] T004 [P] Configure Vitest for both packages (`packages/core/vitest.config.ts`,
+- [X] T004 [P] Configure Vitest for both packages (`packages/core/vitest.config.ts`,
       `packages/testing/vitest.config.ts`, or a single `vitest.workspace.ts` at repo root —
       per research.md's Testing decision).
-- [ ] T005 [P] Choose and document linting/formatting tooling: replace the "TBD" line in
+- [X] T005 [P] Choose and document linting/formatting tooling: replace the "TBD" line in
       `Docs/Tech-Stack-Constitution.md` with the actual choice (ESLint + Prettier, or Biome),
       then add the corresponding root-level config file(s).
-- [ ] T006 [P] Add `.github/workflows/ci.yml` running `pnpm install`, typecheck, lint, and test
+- [X] T006 [P] Add `.github/workflows/ci.yml` running `pnpm install`, typecheck, lint, and test
       across the workspace on every PR, alongside the existing
       `.github/workflows/tier1-security.yml`.
 
