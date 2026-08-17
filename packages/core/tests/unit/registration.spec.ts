@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Chatter, ChatterConfigurationError } from "../../src/index.js";
+import { Chatter, ChatterConfigurationError } from "@chatter/core";
 import { FakeAccountAdapter } from "@chatter/testing";
 
 describe("account registration", () => {

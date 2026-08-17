@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Chatter, type MessageCreatedEvent } from "../../src/index.js";
+import { Chatter, type MessageCreatedEvent } from "@chatter/core";
 import { FakeAccountAdapter } from "@chatter/testing";
 
 describe("round trip via the fake adapter", () => {

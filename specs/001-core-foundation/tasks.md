@@ -168,28 +168,28 @@ expected error subclass.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T023 [P] [US3] Write failing unit test: `Chatter.getCapabilities(accountName)` reflects
+- [X] T023 [P] [US3] Write failing unit test: `Chatter.getCapabilities(accountName)` reflects
       the fake account's declared capability set, in
       `packages/core/tests/unit/capabilities.spec.ts`.
-- [ ] T024 [P] [US3] Write failing unit test: a thread-targeted send on an account constructed
+- [X] T024 [P] [US3] Write failing unit test: a thread-targeted send on an account constructed
       without the `"thread"` capability rejects with `ChatterUnsupportedCapabilityError`, in
       `packages/core/tests/unit/capabilities.spec.ts`.
-- [ ] T025 [P] [US3] Write failing unit test: a send targeting an unrecognized conversation/
+- [X] T025 [P] [US3] Write failing unit test: a send targeting an unrecognized conversation/
       message reference rejects with `ChatterInvalidTargetError`, in
       `packages/core/tests/unit/errors.spec.ts`.
-- [ ] T026 [P] [US3] Write failing unit test: after calling `FakeAccountAdapter.
+- [X] T026 [P] [US3] Write failing unit test: after calling `FakeAccountAdapter.
       simulateRateLimit(retryAfterMs)`, the next `send()` rejects with `ChatterRateLimitError`
       exposing `retryable: true` and the given `retryAfterMs`, in
       `packages/testing/tests/fake-account.spec.ts`.
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Implement capability-aware validation (unsupported-capability and
+- [X] T027 [US3] Implement capability-aware validation (unsupported-capability and
       invalid-target checks) in `FakeAccountAdapter.send()` and confirm `Chatter.send()`
       propagates the resulting typed errors unchanged, in
       `packages/testing/src/fake-account/fake-account-adapter.ts` and
       `packages/core/src/orchestrator/chatter.ts`. Depends on: T016, T014.
-- [ ] T028 [US3] Implement `FakeAccountAdapter.simulateRateLimit()` in
+- [X] T028 [US3] Implement `FakeAccountAdapter.simulateRateLimit()` in
       `packages/testing/src/fake-account/fake-account-adapter.ts`. Depends on: T014. Run
       `pnpm -r test` and confirm T023–T026 pass.
 
