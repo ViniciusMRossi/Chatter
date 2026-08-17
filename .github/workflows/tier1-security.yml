@@ -1,0 +1,37 @@
+name: Tier 1 Security Scan
+
+on:
+  pull_request:
+
+jobs:
+  semgrep:
+    name: Semgrep (SAST)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+
+  secrets-scan:
+    name: Secrets scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# This is a starting point, not a finished policy. Tune the Semgrep ruleset to your stack,
+# and decide whether findings should block the PR outright or just require review — that
+# call belongs to the Security Engineer role, documented in Docs/Tech-Stack-Constitution.md.
+#
+# Tier 2 (Shannon full scan) is intentionally NOT wired into CI. It's triggered manually by
+# a human, never automatically and never by an agent — see AGENTS.md.
