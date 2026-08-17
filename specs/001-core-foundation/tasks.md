@@ -62,24 +62,24 @@ depends on. No user story can start before this phase is done.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T007 [P] Define reference-key types (`AccountKey`, `ParticipantKey`, `ConversationKey`,
+- [X] T007 [P] Define reference-key types (`AccountKey`, `ParticipantKey`, `ConversationKey`,
       `ThreadKey`, composed exactly as in data-model.md "Reference keys") in
       `packages/core/src/types/ids.ts`.
-- [ ] T008 [P] Define domain types — `Provider`, `Account`, `Participant`, `Conversation`
+- [X] T008 [P] Define domain types — `Provider`, `Account`, `Participant`, `Conversation`
       (with `type: "direct" | "group" | "channel" | "unknown"`), `Message`,
       `MessageCreatedEvent`, `Capability` (`"text" | "reply" | "thread"`), `DeliveryResult` — per
       data-model.md, in `packages/core/src/types/{provider,account,participant,conversation,
       message,event,capability,delivery-result}.ts`.
-- [ ] T009 [P] Implement the `ChatterError` hierarchy (`ChatterError` abstract base +
+- [X] T009 [P] Implement the `ChatterError` hierarchy (`ChatterError` abstract base +
       `ChatterConfigurationError`, `ChatterAuthenticationError`, `ChatterAuthorizationError`,
       `ChatterRateLimitError` (with `retryable`, `retryAfterMs?`),
       `ChatterInvalidTargetError`, `ChatterUnsupportedCapabilityError`,
       `ChatterProviderUnavailableError` (with `retryable`), `ChatterUnknownError`) per
       research.md, in `packages/core/src/errors/*.ts`.
-- [ ] T010 Define the `AccountAdapter` contract interface (`provider`, `getCapabilities()`,
+- [X] T010 Define the `AccountAdapter` contract interface (`provider`, `getCapabilities()`,
       `start(dispatch)`, `stop()`, `send(input)`) per contracts/core-api.md, in
       `packages/core/src/adapter/adapter.ts`. Depends on: T007, T008, T009.
-- [ ] T011 Implement `packages/core/src/index.ts` barrel export of all public types, errors, and
+- [X] T011 Implement `packages/core/src/index.ts` barrel export of all public types, errors, and
       the adapter interface. Depends on: T007, T008, T009, T010.
 
 **Checkpoint**: Foundation ready — type model, errors, and the adapter contract compile and are
