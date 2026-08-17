@@ -137,20 +137,20 @@ inbound messages, verified per-account attribution.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T019 [P] [US2] Write failing unit test: registering two accounts under the same
+- [X] T019 [P] [US2] Write failing unit test: registering two accounts under the same
       `accountName` throws `ChatterConfigurationError` synchronously at construction, in
       `packages/core/tests/unit/registration.spec.ts`.
-- [ ] T020 [P] [US2] Write failing integration test: two fake accounts, one inbound message
+- [X] T020 [P] [US2] Write failing integration test: two fake accounts, one inbound message
       each, confirm each event reports the correct `account`, and a reply sent "from" one
       account never appears in the other's `sentMessages`, in
       `packages/core/tests/integration/multi-account.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Implement `accountName` uniqueness validation in the `Chatter` constructor
+- [X] T021 [US2] Implement `accountName` uniqueness validation in the `Chatter` constructor
       (throwing `ChatterConfigurationError`) in `packages/core/src/orchestrator/chatter.ts`.
       Depends on: T015.
-- [ ] T022 [US2] Confirm/adjust per-account tagging on inbound event dispatch and outbound send
+- [X] T022 [US2] Confirm/adjust per-account tagging on inbound event dispatch and outbound send
       routing so accounts are fully isolated, in `packages/core/src/orchestrator/chatter.ts`.
       Depends on: T021. Run `pnpm -r test` and confirm T019 and T020 pass.
 
