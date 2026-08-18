@@ -35,14 +35,14 @@ additions to the existing `bruno/telegram-adapter/` collection. No new package, 
 
 **⚠️ CRITICAL**: No user story's automated tests can pass until this phase is complete.
 
-- [ ] T001 [P] Extend `StubTelegramTransport`'s `#defaultResponse` in
+- [X] T001 [P] Extend `StubTelegramTransport`'s `#defaultResponse` in
       `packages/telegram/tests/support/stub-transport.ts`: add realistic default cases for
       `sendPhoto`, `sendVideo`, `sendDocument` (each returning a `message_id`/`date`/`chat` shape
       analogous to the existing `sendMessage` case), and `getFile` (returning a synthetic
       `{ file_id, file_unique_id, file_size, file_path }` built from the requested `file_id`, so
       tests can assert the correct `file_id` was resolved). `queue()`/`queueError()` continue to
       work for all four, unchanged.
-- [ ] T002 [P] Write unit tests confirming the new stub defaults: a `sendPhoto`/`sendVideo`/
+- [X] T002 [P] Write unit tests confirming the new stub defaults: a `sendPhoto`/`sendVideo`/
       `sendDocument` call without a queued override returns a well-formed result; a `getFile`
       call returns a `file_path` derived from the requested `file_id`, in
       `packages/telegram/tests/support/stub-transport.spec.ts`.
@@ -61,37 +61,37 @@ without a caption) and confirm each dispatches a message with the correct attach
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T003 [P] [US1] Write unit test: mapping a `PhotoSize` (via a queued `getFile` response)
+- [X] T003 [P] [US1] Write unit test: mapping a `PhotoSize` (via a queued `getFile` response)
       produces an `Attachment` with `kind: "image"` and `source.url` built from the resolved
       `file_path` — never containing the raw `file_id`, in
       `packages/telegram/tests/unit/mapping.spec.ts`.
-- [ ] T004 [P] [US1] Write unit test (same file): mapping a `Video` or `Document` produces the
+- [X] T004 [P] [US1] Write unit test (same file): mapping a `Video` or `Document` produces the
       correct `kind` (`"video"`/`"file"`) and populates `fileName`/`mimeType`/`sizeBytes` only
       from fields Telegram actually supplied (photo mapping never fabricates a fileName/mimeType
       Telegram didn't provide).
-- [ ] T005 [P] [US1] Write unit test (same file): given a `photo` array with multiple
+- [X] T005 [P] [US1] Write unit test (same file): given a `photo` array with multiple
       `PhotoSize` entries, the mapped attachment resolves the `file_id` of the LAST (largest)
       entry, not the first.
-- [ ] T006 [US1] Write integration test: a synthetic webhook update carrying a photo with a
+- [X] T006 [US1] Write integration test: a synthetic webhook update carrying a photo with a
       caption dispatches a message with `attachments: [{kind: "image", ...}]` and
       `text: "<caption>"`; the same shape with no caption dispatches with `text: undefined`, in
       `packages/telegram/tests/integration/attachment-round-trip.spec.ts`.
-- [ ] T007 [P] [US1] Write integration test (same file): a synthetic webhook update carrying a
+- [X] T007 [P] [US1] Write integration test (same file): a synthetic webhook update carrying a
       video, and separately one carrying a document, each dispatch a message with the correct
       attachment kind.
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Create `mapAttachment(media, kind, api)` in
+- [X] T008 [US1] Create `mapAttachment(media, kind, api)` in
       `packages/telegram/src/mapping/attachment.ts`: calls `api.getFile(media.file_id)`, builds
       `https://api.telegram.org/file/bot<token>/<file_path>`, populates `fileName`/`mimeType`/
       `sizeBytes` from whichever fields are present on `media`. Depends on: T001.
-- [ ] T009 [US1] Extend `mapMessage` in `packages/telegram/src/mapping/message.ts` to accept a
+- [X] T009 [US1] Extend `mapMessage` in `packages/telegram/src/mapping/message.ts` to accept a
       message carrying `photo`/`video`/`document` (selecting the largest `PhotoSize` when
       applicable), call `mapAttachment` to populate `Message.attachments`, and read `text` from
       `caption` when the message carries media (falling back to `text` otherwise). Depends on:
       T008. Run `pnpm -r test` and confirm T003-T005 pass.
-- [ ] T010 [US1] Extend the dispatch gate in
+- [X] T010 [US1] Extend the dispatch gate in
       `packages/telegram/src/webhook/telegram-webhook-handler.ts` to also fire when
       `message?.photo`, `message?.video`, or `message?.document` is present, not only
       `message?.text`. Depends on: T009. Run `pnpm -r test` and confirm T006-T007 pass.
@@ -112,37 +112,37 @@ correct outbound call recorded by the stub.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T011 [P] [US2] Write unit test: `send()` with an `{url}`-sourced image attachment records a
+- [X] T011 [P] [US2] Write unit test: `send()` with an `{url}`-sourced image attachment records a
       `sendPhoto` call on the stub with `photo` equal to the URL string (no bytes read), in
       `packages/telegram/tests/unit/send-attachment.spec.ts`.
-- [ ] T012 [P] [US2] Write unit test (same file): `send()` with a `{data: Buffer}`-sourced
+- [X] T012 [P] [US2] Write unit test (same file): `send()` with a `{data: Buffer}`-sourced
       attachment records the correct `sendPhoto`/`sendVideo`/`sendDocument` call (by kind) with
       an `InputFile`-wrapped payload.
-- [ ] T013 [P] [US2] Write unit test (same file): `send()` with an attachment AND `text` records
+- [X] T013 [P] [US2] Write unit test (same file): `send()` with an attachment AND `text` records
       the outbound call with `caption` equal to that text; `send()` with an attachment and no
       text succeeds with no `caption` set (no longer rejected by the ticket #4 placeholder
       guard).
-- [ ] T014 [P] [US2] Write unit test (same file): `send()` with neither `text` nor `attachment`
+- [X] T014 [P] [US2] Write unit test (same file): `send()` with neither `text` nor `attachment`
       still rejects with `ChatterConfigurationError` (the placeholder guard's one remaining valid
       case).
-- [ ] T015 [P] [US2] Write unit test: `getCapabilities()` returns exactly
+- [X] T015 [P] [US2] Write unit test: `getCapabilities()` returns exactly
       `{"text", "reply", "attachments"}`, in `packages/telegram/tests/unit/capabilities.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] In `TelegramAccountAdapter.send()`
+- [X] T016 [US2] In `TelegramAccountAdapter.send()`
       (`packages/telegram/src/adapter/telegram-account-adapter.ts`), replace the unconditional
       "reject any attachment" check with real handling: select `sendPhoto`/`sendVideo`/
       `sendDocument` by `attachment.kind`, pass `source.url` directly or wrap `source.data` in
       grammY's `InputFile` (with `fileName`), and pass `input.text` as `caption` when present.
       Depends on: T001.
-- [ ] T017 [US2] Narrow the existing "text is required" guard so it only fires when
+- [X] T017 [US2] Narrow the existing "text is required" guard so it only fires when
       `input.attachment` is ALSO absent — an attachment-only send is now valid. Depends on: T016.
       Run `pnpm -r test` and confirm T011-T014 pass.
-- [ ] T018 [US2] Update `CAPABILITIES` in `telegram-account-adapter.ts` to
+- [X] T018 [US2] Update `CAPABILITIES` in `telegram-account-adapter.ts` to
       `new Set(["text", "reply", "attachments"])`. Depends on: T016, T017. Run `pnpm -r test` and
       confirm T015 passes.
-- [ ] T019 [P] [US2] Add `bruno/telegram-adapter/telegram-bot-api/send-photo.yml`,
+- [X] T019 [P] [US2] Add `bruno/telegram-adapter/telegram-bot-api/send-photo.yml`,
       `send-video.yml`, `send-document.yml` — real-Telegram, local-only requests mirroring the
       existing `send-message.yml` pattern, per the standing Bruno-documentation workflow rule.
 
@@ -161,19 +161,19 @@ with zero outbound calls recorded.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T020 [P] [US3] Write unit test: `send()` with a `{data}` image attachment one byte over
+- [X] T020 [P] [US3] Write unit test: `send()` with a `{data}` image attachment one byte over
       10MB rejects with `ChatterConfigurationError`, and the stub records zero calls, in
       `packages/telegram/tests/unit/send-attachment.spec.ts`.
-- [ ] T021 [P] [US3] Write unit test (same file): the same at exactly 10MB succeeds (inclusive
+- [X] T021 [P] [US3] Write unit test (same file): the same at exactly 10MB succeeds (inclusive
       limit, matching ticket #3's precedent); a `{data}` video/document attachment is checked
       against 50MB the same way.
-- [ ] T022 [P] [US3] Write unit test (same file): a `{url}`-sourced attachment of any size
+- [X] T022 [P] [US3] Write unit test (same file): a `{url}`-sourced attachment of any size
       (simulated via a very long URL string, since size isn't otherwise knowable) is never
       rejected by this client-side check.
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Add a `TELEGRAM_ATTACHMENT_SIZE_LIMITS` constant (image: 10_000_000, video/file:
+- [X] T023 [US3] Add a `TELEGRAM_ATTACHMENT_SIZE_LIMITS` constant (image: 10_000_000, video/file:
       50_000_000) and a pre-call check in `send()` — reject with `ChatterConfigurationError`
       before any API call when the attachment's source is `{data}` and `data.byteLength` exceeds
       the limit for its kind, in `telegram-account-adapter.ts`. Depends on: T016. Run
@@ -193,7 +193,7 @@ and download-reference behavior without experimentation.
 
 ### Implementation for User Story 4
 
-- [ ] T024 [US4] Update `packages/telegram/README.md`: document the 10MB/50MB send-side limits
+- [X] T024 [US4] Update `packages/telegram/README.md`: document the 10MB/50MB send-side limits
       (matching T023 exactly), the separate 20MB `getFile` download cap (noting it applies
       regardless of a file's original send-time size), that resolved download URLs expire after
       roughly an hour, and — per FR-012 — that a resolved download URL embeds the bot's own
@@ -215,14 +215,14 @@ previously-inapplicable "supported" attachment check now passes for real.
 
 ### Implementation for User Story 5
 
-- [ ] T025 [US5] Update `packages/telegram/tests/conformance.spec.ts`'s
+- [X] T025 [US5] Update `packages/telegram/tests/conformance.spec.ts`'s
       `runAccountConformanceSuite` call to supply
       `getTestAttachment: () => ({ kind: "file", source: { data: Buffer.from("conformance attachment") } })`
       (replacing the placeholder comment noting the check was previously a no-op). Depends on:
       T016, T018, T023. Run `pnpm -r test` and confirm every conformance check passes, including
       the now-genuinely-exercised attachment-supported path, with zero regression to any
       pre-existing check (SC-005).
-- [ ] T026 [P] Add `bruno/telegram-adapter/local-webhook/photo-message.yml`,
+- [X] T026 [P] Add `bruno/telegram-adapter/local-webhook/photo-message.yml`,
       `photo-message-no-caption.yml`, and `document-message.yml` — synthetic, CI-safe webhook
       delivery requests proving the dispatch gate fires for media updates, wired into the
       existing `test:bruno` run alongside the existing `local-webhook/` requests.
@@ -241,7 +241,7 @@ success or surfaces a specific, actionable problem.
 
 ### Implementation for User Story 6
 
-- [ ] T027 [US6] Add a new section to `packages/telegram/MANUAL-VERIFICATION.md`, following the
+- [X] T027 [US6] Add a new section to `packages/telegram/MANUAL-VERIFICATION.md`, following the
       existing direct-chat/group-chat pattern: send an image to the bot and confirm it's
       received and displayable; have the bot send an image back and confirm it arrives; a
       reminder (per FR-012) that the resolved download URL should not be pasted into logs, chat,
@@ -253,9 +253,9 @@ success or surfaces a specific, actionable problem.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T028 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
+- [X] T028 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
       pass before opening the pull request.
-- [ ] T029 Run `pnpm --filter @chatter/telegram test:bruno` locally to confirm the extended
+- [X] T029 Run `pnpm --filter @chatter/telegram test:bruno` locally to confirm the extended
       Bruno collection passes in the same CI-safe way as before.
 
 ---

@@ -1,0 +1,43 @@
+info:
+  name: Photo Message No Caption
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100004,
+        "message": {
+          "message_id": 4,
+          "date": 1700000000,
+          "chat": { "id": 555, "type": "private", "first_name": "Ada" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "photo": [
+            { "file_id": "photo-nc", "file_unique_id": "photo-nc-u", "width": 800, "height": 800 }
+          ]
+        }
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("responds 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  Simulates Telegram delivering a photo with no caption at all — proves an
+  attachment-only message (no text) is dispatched correctly rather than being
+  dropped or requiring a caption, matching specs/004-attachment-model's
+  attachment-only support and specs/005-telegram-attachment-mapping Story 1.

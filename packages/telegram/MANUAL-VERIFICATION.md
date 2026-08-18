@@ -70,6 +70,29 @@ under `local-webhook/`) if you'd rather click a saved request than hand-craft `c
       the process without ever calling `chatter.stop()`, leaving the webhook registered. Fixed
       alongside this run; see the example app's own git history for that change._
 
+## 6. Image round trip (attachments)
+
+`example-apps/telegram-echo` doesn't render attachments in this ticket (that's a later,
+non-ticket phase) — its console log still only shows `event.message.text`, so verification here
+relies on that log plus the Bruno collection's `Send Photo` request, not on the example app
+echoing an image back.
+
+- [ ] With `example-apps/telegram-echo` still running from step 1, send a photo (with a caption)
+      to your bot from a private chat.
+- [ ] Confirm the console log line for that message shows the caption as the text (e.g.
+      `[direct] <you>: <your caption>`) — proving the inbound photo was mapped and dispatched,
+      even though nothing renders the image itself in this example app.
+- [ ] Send a second photo with **no caption** and confirm the console log line shows empty text
+      (`[direct] <you>: `) rather than the process crashing or the message being dropped
+      silently.
+- [ ] Use the Bruno collection's `Send Photo` request (`telegram-bot-api/send-photo.yml`) against
+      your real bot token and chat ID, and confirm the photo actually arrives in your Telegram
+      chat, displayable, with the caption "Sent from Bruno".
+- [ ] **Do not** paste, log, or share the URL your bot receives internally when resolving a
+      photo's download link (visible if you inspect the adapter's own network calls, e.g. via a
+      debugger) — per `packages/telegram/README.md`'s "Attachments" section, that URL embeds your
+      bot's token and must be treated as sensitive, not shared casually even during this check.
+
 ## Recording results
 
 Note the date, Telegram bot username used (not the token), and pass/fail for each section in
@@ -79,6 +102,6 @@ against the stub.
 
 ### Verification log
 
-| Date | Bot username | Sections 1-3, 5 | Section 4 | Notes |
-|------|---------------|:---:|:---:|-------|
-| 2026-08-18 | `@[redacted]_bot` (Chatter Test Bot) | ✅ Pass | Not attempted (optional) | First real-Telegram run since ticket #2. Direct chat, group chat, and shutdown all verified against real Telegram infrastructure. Found and fixed a real gap: the example app had no graceful-shutdown wiring — see the shutdown handler fix in the same PR. |
+| Date | Bot username | Sections 1-3, 5 | Section 4 | Section 6 | Notes |
+|------|---------------|:---:|:---:|:---:|-------|
+| 2026-08-18 | `@[redacted]_bot` (Chatter Test Bot) | ✅ Pass | Not attempted (optional) | — | First real-Telegram run since ticket #2. Direct chat, group chat, and shutdown all verified against real Telegram infrastructure. Found and fixed a real gap: the example app had no graceful-shutdown wiring — see the shutdown handler fix in the same PR. |

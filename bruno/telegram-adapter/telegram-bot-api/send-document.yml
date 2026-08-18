@@ -1,0 +1,35 @@
+info:
+  name: Send Document
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{telegram_api_base}}/bot{{bot_token}}/sendDocument"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "chat_id": "{{chat_id}}",
+        "document": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        "caption": "Sent from Bruno"
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("document sent", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.ok).to.equal(true);
+          expect(res.body.result.document).to.be.an("object");
+        });
+
+docs: |-
+  Sends a document by URL — what TelegramAccountAdapter.send() does internally
+  for a `{ url }`-sourced file attachment. See Send Photo's docs for the same
+  notes on the raw-bytes upload path not being representable here.

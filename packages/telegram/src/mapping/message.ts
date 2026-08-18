@@ -1,27 +1,53 @@
-import type { InboundMessage, Participant } from "@chatter/core";
+import type { Attachment, InboundMessage, Participant } from "@chatter/core";
 import type { Message as TelegramMessage } from "@grammyjs/types";
+import type { Api } from "grammy";
+import { mapAttachment } from "./attachment.js";
 import { mapConversation } from "./conversation.js";
 import { mapParticipant } from "./participant.js";
 
-/** A Telegram message known (by the caller) to carry text. */
-export type TelegramTextMessage = TelegramMessage & { text: string };
-
 const UNKNOWN_SENDER_ID = "unknown";
 
-export function mapMessage(
-  message: TelegramTextMessage,
+async function mapMessageAttachment(
+  message: TelegramMessage,
+  api: Api,
+  botToken: string,
+): Promise<Attachment | undefined> {
+  if (message.photo !== undefined) {
+    const largest = message.photo[message.photo.length - 1];
+    if (largest === undefined) {
+      return undefined;
+    }
+    return mapAttachment(largest, "image", api, botToken);
+  }
+  if (message.video !== undefined) {
+    return mapAttachment(message.video, "video", api, botToken);
+  }
+  if (message.document !== undefined) {
+    return mapAttachment(message.document, "file", api, botToken);
+  }
+  return undefined;
+}
+
+export async function mapMessage(
+  message: TelegramMessage,
   providerAccountId: string,
-): InboundMessage {
+  api: Api,
+  botToken: string,
+): Promise<InboundMessage> {
   const sender: Participant = message.from
     ? mapParticipant(message.from, providerAccountId)
     : { provider: "telegram", providerAccountId, providerParticipantId: UNKNOWN_SENDER_ID };
+
+  const attachment = await mapMessageAttachment(message, api, botToken);
+  const text = attachment !== undefined ? message.caption : message.text;
 
   return {
     id: String(message.message_id),
     provider: "telegram",
     sender,
     conversation: mapConversation(message.chat, providerAccountId),
-    text: message.text,
+    ...(text !== undefined ? { text } : {}),
+    ...(attachment !== undefined ? { attachments: [attachment] } : {}),
     createdAt: new Date(message.date * 1000),
     ...(message.reply_to_message
       ? { replyToMessageId: String(message.reply_to_message.message_id) }

@@ -1,0 +1,46 @@
+info:
+  name: Photo Message
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100003,
+        "message": {
+          "message_id": 3,
+          "date": 1700000000,
+          "chat": { "id": 555, "type": "private", "first_name": "Ada" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "photo": [
+            { "file_id": "small", "file_unique_id": "small-u", "width": 90, "height": 90 },
+            { "file_id": "large", "file_unique_id": "large-u", "width": 800, "height": 800 }
+          ],
+          "caption": "check this out"
+        }
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("responds 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  Simulates Telegram delivering a photo with a caption — proves the webhook
+  dispatch gate fires for media updates (specs/005-telegram-attachment-mapping),
+  not just text ones. Against tests/bruno/webhook-test-server.ts (which uses
+  StubTelegramTransport), getFile resolves without a real Telegram bot; the
+  dispatched message should carry an image attachment plus the caption as text.

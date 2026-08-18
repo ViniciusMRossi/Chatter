@@ -67,8 +67,9 @@ runAccountConformanceSuite({
     type: "direct",
   }),
 
-  // This adapter doesn't declare "attachments" yet (that's the next ticket) — the suite's
-  // supported-attachment check is a no-op here; only the unsupported-rejection check runs.
+  // This adapter now declares "attachments" (specs/005-telegram-attachment-mapping) — the
+  // suite's supported-attachment check genuinely exercises send() against the stubbed
+  // transport, not a no-op.
   getTestAttachment: (): Attachment => ({
     kind: "file",
     source: { data: Buffer.from("conformance attachment") },

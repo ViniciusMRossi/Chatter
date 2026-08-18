@@ -36,8 +36,13 @@ async function mapAttachment(
   media: PhotoSize | Video | Document,
   kind: AttachmentKind,
   api: Api,
+  botToken: string,
 ): Promise<Attachment>;
 ```
+
+`botToken` is passed explicitly (not read off `api`) because grammY's `Api` class does not
+publicly expose the token it was constructed with — the caller (`TelegramAccountAdapter`, which
+already holds it in its own config) supplies it directly.
 
 - MUST call `api.getFile(media.file_id)` and build the download URL as
   `https://api.telegram.org/file/bot<token>/<file_path>` — never expose `file_id` or
@@ -47,10 +52,17 @@ async function mapAttachment(
 - For `PhotoSize[]`, the caller (not this function) MUST select the last (largest) element before
   calling this function.
 
-## `mapping/message.ts` (`mapMessage`, behavior extended)
+## `mapping/message.ts` (`mapMessage`, extended — now async)
 
+- Signature changes from `mapMessage(message, providerAccountId): InboundMessage` to
+  `mapMessage(message, providerAccountId): Promise<InboundMessage>` — resolving an attachment's
+  download URL via `getFile` is an unavoidable network round trip, so mapping a media-bearing
+  message can no longer be synchronous. `mapAttachment` needs the bot's `Api` client and token,
+  so `mapMessage` now also takes those two additional parameters.
 - MUST now accept a Telegram message carrying `text`, or `photo`/`video`/`document` (with or
-  without a `caption`), or both.
+  without a `caption`), or both — the previous `TelegramTextMessage` narrowing type (`Message &
+  {text: string}`) is removed; `text`/`photo`/`video`/`document` were already optional fields on
+  the base Telegram `Message` type, so no replacement narrowing type is needed.
 - `Message.attachments` MUST be populated (via `mapAttachment`) when the source message carries
   photo/video/document; absent otherwise (unchanged).
 - `Message.text` MUST come from `caption` when the message carries media, or from `text`
@@ -61,7 +73,23 @@ async function mapAttachment(
 Still `(request: Request) => Promise<Response>`. The dispatch gate (previously
 `message?.text !== undefined`) now also fires when `message?.photo`, `message?.video`, or
 `message?.document` is present — a media update with no caption and no text is no longer
-silently dropped.
+silently dropped. Since `mapMessage` is now async and involves a network call (`getFile`) that
+can fail, the handler now wraps the map+dispatch step in a try/catch: on failure, it reports the
+failure through the adapter's existing non-fatal-error callback (the same one `stop()`'s
+`deleteWebhook` cleanup failure already uses) rather than letting an unhandled rejection surface,
+and still returns 200 / records the update as processed either way — Telegram must not be told to
+retry a delivery that already reached the adapter, matching ticket #3's dedup precedent.
+
+## `TelegramAccountAdapter.reportNonFatalError()` (new, internal — used by the webhook handler)
+
+```ts
+reportNonFatalError(message: string): void;
+```
+
+Routes a pre-sanitized message string through the adapter's existing `onNonFatalError` callback
+(from ticket #3) — not part of the `AccountAdapter` contract, used only by
+`createTelegramWebhookHandler()` to surface an inbound mapping failure without ever including a
+secret or a raw error object.
 
 ## `tests/support/stub-transport.ts` (test-only, extended)
 

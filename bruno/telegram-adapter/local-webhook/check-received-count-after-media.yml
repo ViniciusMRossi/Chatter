@@ -1,0 +1,23 @@
+info:
+  name: Check Received Count After Media
+  type: http
+  seq: 9
+
+http:
+  method: GET
+  url: "{{local_received_count_url}}"
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("all three media messages were dispatched, bringing the total to five", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.count).to.equal(5);
+        });
+
+docs: |-
+  Only meaningful against `tests/bruno/webhook-test-server.ts` (see Check
+  Received Count After Direct for details). Two from the direct/group pair
+  plus three media messages (photo with caption, photo without, document) = 5.
