@@ -1,0 +1,241 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f8f8f8;
+  color: #1d1c1d;
+}
+
+#app {
+  display: flex;
+  height: 100vh;
+}
+
+#sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #3f0e40;
+  color: #d1c6d3;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+#sidebar-header {
+  padding: 16px 16px 12px;
+  font-weight: 700;
+  color: white;
+  font-size: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#conversation-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.conversation-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.conversation-item.selected {
+  background: #1164a3;
+  color: white;
+}
+
+.conversation-item .unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e01e5a;
+  flex-shrink: 0;
+  visibility: hidden;
+}
+
+.conversation-item.has-unread .unread-dot {
+  visibility: visible;
+}
+
+#conversation-list:empty::after {
+  content: "Waiting for the first message…";
+  display: block;
+  padding: 7px 16px;
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+#main-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+#header {
+  padding: 12px 20px;
+  background: #350d36;
+  color: white;
+  flex-shrink: 0;
+}
+
+#header h1 {
+  margin: 0;
+  font-size: 16px;
+}
+
+#status {
+  margin: 4px 0 0;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+#status.error {
+  color: #ff8a8a;
+  opacity: 1;
+}
+
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message {
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.message.outbound {
+  align-self: flex-end;
+  background: #e8f5e9;
+}
+
+.message-meta {
+  font-size: 12px;
+  color: #616061;
+  margin-bottom: 4px;
+}
+
+.message-meta .sender {
+  font-weight: 700;
+  color: #1d1c1d;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-image {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 4px;
+  display: block;
+  margin-top: 4px;
+}
+
+.message-audio {
+  max-width: 100%;
+  width: 280px;
+  display: block;
+  margin-top: 4px;
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px;
+  background: #f4f4f4;
+  border-radius: 6px;
+}
+
+.file-chip-icon {
+  font-size: 20px;
+}
+
+.file-chip-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-chip-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-chip-size {
+  font-size: 12px;
+  color: #616061;
+}
+
+.file-chip button {
+  border: none;
+  background: #350d36;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  border-top: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+#text-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+#attach-button,
+#send-button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #350d36;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#attach-button:disabled,
+#send-button:disabled,
+#text-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

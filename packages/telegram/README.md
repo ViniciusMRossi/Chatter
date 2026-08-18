@@ -64,12 +64,24 @@ silently sending to the wrong place.
 
 ## Attachments
 
-Inbound photo/video/document updates are dispatched as a `Message` with a populated
+Inbound photo/video/document/voice/audio updates are dispatched as a `Message` with a populated
 `attachments` array; Telegram's `caption` field (when present) becomes `Message.text`, exactly
 like a plain text message — an attachment never requires a caption. Outbound, `SendInput.attachment`
 accepts either a `{ url }` reference (Telegram fetches it server-side — no bytes pass through
 this adapter) or `{ data: Buffer }` for a genuine upload; `SendInput.text`, when present alongside
 an attachment, becomes the outbound `caption`.
+
+**Voice messages and audio files (receive-only)**: Telegram's `voice` (a recorded voice message,
+typically `audio/ogg`) and `audio` (an uploaded music file, e.g. `audio/mpeg`) message types are
+both mapped to `kind: "file"` — there's no separate `"audio"` kind in `@chatter/core`'s closed
+set, since `mimeType` (usually present, but see FR-002's "don't fabricate what Telegram didn't
+supply" precedent — never guaranteed) already tells application code it's playable audio via a
+simple `mimeType?.startsWith("audio/")` check, without needing a new capability or Attachment
+variant. **This adapter only receives voice/audio — `send()` does not offer a way to send
+either**; a `SendInput.attachment` is always sent via `sendPhoto`/`sendVideo`/`sendDocument`
+depending on `kind`, and since voice/audio map to `"file"`, sending one goes through
+`sendDocument` (Telegram will still accept and play it as a document, just without voice-message
+UI treatment on the recipient's end) rather than `sendVoice`/`sendAudio`.
 
 **Real Telegram constraints this adapter enforces or is subject to** — not values this adapter
 invented, and not something a future Telegram API change would let this adapter unilaterally

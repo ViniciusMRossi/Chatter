@@ -8,7 +8,9 @@ function hasDispatchableContent(message: Update["message"]): boolean {
     message?.text !== undefined ||
     message?.photo !== undefined ||
     message?.video !== undefined ||
-    message?.document !== undefined
+    message?.document !== undefined ||
+    message?.voice !== undefined ||
+    message?.audio !== undefined
   );
 }
 

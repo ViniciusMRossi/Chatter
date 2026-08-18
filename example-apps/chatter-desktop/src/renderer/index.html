@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; media-src 'self' data:; style-src 'self' 'unsafe-inline';" />
+    <title>Chatter Desktop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <nav id="sidebar" aria-label="Conversations">
+        <div id="sidebar-header">Chatter Desktop</div>
+        <ul id="conversation-list"></ul>
+      </nav>
+      <div id="main-column">
+        <header id="header">
+          <h1 id="conversation-title">No conversation selected</h1>
+          <p id="status">Starting…</p>
+        </header>
+        <main id="messages" aria-live="polite"></main>
+        <footer id="composer">
+          <button id="attach-button" type="button" title="Attach a file" disabled>📎</button>
+          <input id="text-input" type="text" placeholder="Type a message…" autocomplete="off" disabled />
+          <button id="send-button" type="button" disabled>Send</button>
+        </footer>
+      </div>
+    </div>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

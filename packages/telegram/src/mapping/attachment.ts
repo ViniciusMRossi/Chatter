@@ -1,11 +1,18 @@
 import type { Attachment, AttachmentKind } from "@chatter/core";
-import type { Document, PhotoSize, Video } from "@grammyjs/types";
+import type { Audio, Document, PhotoSize, Video, Voice } from "@grammyjs/types";
 import type { Api } from "grammy";
 
-type TelegramMedia = PhotoSize | Video | Document;
+type TelegramMedia = PhotoSize | Video | Document | Voice | Audio;
 
-function hasFileName(media: TelegramMedia): media is Video | Document {
+// Voice carries mime_type but never file_name; PhotoSize carries neither — these can't be
+// collapsed into a single guard the way ticket #5 originally did for Video | Document, which
+// happened to always have both or neither together.
+function hasFileName(media: TelegramMedia): media is Video | Document | Audio {
   return "file_name" in media;
+}
+
+function hasMimeType(media: TelegramMedia): media is Video | Document | Voice | Audio {
+  return "mime_type" in media;
 }
 
 /**
@@ -30,7 +37,7 @@ export async function mapAttachment(
     kind,
     source: { url },
     ...(hasFileName(media) && media.file_name !== undefined ? { fileName: media.file_name } : {}),
-    ...(hasFileName(media) && media.mime_type !== undefined ? { mimeType: media.mime_type } : {}),
+    ...(hasMimeType(media) && media.mime_type !== undefined ? { mimeType: media.mime_type } : {}),
     ...(media.file_size !== undefined ? { sizeBytes: media.file_size } : {}),
   };
 }

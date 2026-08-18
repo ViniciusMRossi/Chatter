@@ -1,0 +1,23 @@
+{
+  "name": "chatter-desktop-example",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/main/index.js",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc --build tsconfig.json && mkdir -p dist/renderer && cp src/renderer/index.html src/renderer/styles.css dist/renderer/",
+    "start": "pnpm run build && electron .",
+    "typecheck": "tsc --build tsconfig.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@chatter/core": "workspace:*",
+    "@chatter/telegram": "workspace:*"
+  },
+  "devDependencies": {
+    "electron": "^43.0.0",
+    "typescript": "^5.7.0"
+  }
+}
