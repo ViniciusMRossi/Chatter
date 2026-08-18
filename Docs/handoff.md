@@ -1,18 +1,18 @@
 # Handoff
 
-_Last updated: 2026-08-17 19:47 UTC by unspecified (ticket-complete)_
+_Last updated: 2026-08-18 12:50 UTC by unspecified (ticket-complete)_
 
 ## Where we are
-- Branch: 1-core-package-foundation
-- Ticket: 1
+- Branch: 36-telegram-provider-adapter
+- Ticket: 36
 
 ## Recent commits
 ```
-a4f2329 docs: package READMEs, quickstart/contract corrections, prettier pass (T032-T034)
-32a51d1 feat(testing): adapter-agnostic conformance suite (T029-T031, US4)
-4f5bf44 test: verify typed errors and capability discovery (T023-T028, US3)
-2d3f838 docs: mark T019-T022 complete in tasks.md
-08541fd test: verify multi-account isolation (T019-T022, US2)
+84c6cb4 docs: package READMEs, example app, quickstart corrections, prettier pass (T034-T037)
+23343bd feat(telegram): conformance suite compliance + capability enforcement (T032-T033, US5)
+40375f7 test: verify typed error mapping, capabilities, secret redaction (T025-T031, US4)
+104b1b2 test: verify webhook secret validation (T021-T024, US3)
+0ba08aa test: verify group-chat round trip (T018-T020, US2)
 ```
 
 ## Uncommitted changes
@@ -21,7 +21,7 @@ none
 ```
 
 ## Next step
-Core package foundation: normalized types, adapter contract, Chatter orchestrator, typed errors, fake adapter, and adapter-agnostic conformance suite (issues #1-#34)
+Telegram provider adapter: webhook-based inbound (direct+group chats), outbound send/reply via grammY, typed error mapping, capability enforcement, conformance-suite compliance, example app (issues #36-#72)
 
 ## Open questions / blockers
 _(edit as needed)_
