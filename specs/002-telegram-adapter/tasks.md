@@ -30,15 +30,15 @@ non-package example app at `example-apps/telegram-echo/`.
 
 **Purpose**: New-package scaffolding, mirroring ticket #1's `packages/testing` shape.
 
-- [ ] T001 Create `packages/telegram/package.json` (`"name": "@chatter/telegram"`, `"type":
+- [X] T001 Create `packages/telegram/package.json` (`"name": "@chatter/telegram"`, `"type":
       "module"`, depends on `@chatter/core` via `workspace:*`) and
       `packages/telegram/tsconfig.json` (extends `tsconfig.base.json`, `composite: true`,
       references `../core`), matching `packages/testing`'s shape from ticket #1.
-- [ ] T002 [P] Add `grammy` as a runtime dependency of `packages/telegram`.
-- [ ] T003 [P] Configure `packages/telegram/vitest.config.ts` and
+- [X] T002 [P] Add `grammy` as a runtime dependency of `packages/telegram`.
+- [X] T003 [P] Configure `packages/telegram/vitest.config.ts` and
       `packages/telegram/tsconfig.eslint.json` (include `src`, `tests`, `*.config.ts`), matching
       the existing packages' pattern.
-- [ ] T004 [P] Add `example-apps/*` to the `packages:` glob in `pnpm-workspace.yaml`, and create
+- [X] T004 [P] Add `example-apps/*` to the `packages:` glob in `pnpm-workspace.yaml`, and create
       `example-apps/telegram-echo/package.json` + `tsconfig.json` (depends on `@chatter/core` and
       `@chatter/telegram` via `workspace:*`; not published — no `exports`/`files` fields needed).
 

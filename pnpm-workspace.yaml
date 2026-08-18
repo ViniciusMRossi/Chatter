@@ -1,4 +1,5 @@
 packages:
   - "packages/*"
+  - "example-apps/*"
 allowBuilds:
   esbuild: true
