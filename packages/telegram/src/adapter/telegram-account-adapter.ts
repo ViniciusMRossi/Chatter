@@ -1,5 +1,6 @@
 import {
   ChatterAuthenticationError,
+  ChatterUnsupportedCapabilityError,
   type AccountAdapter,
   type AdapterDeliveryResult,
   type Capability,
@@ -76,6 +77,15 @@ export class TelegramAccountAdapter implements AccountAdapter {
   }
 
   async send(input: SendInput): Promise<AdapterDeliveryResult> {
+    if (input.conversation.providerThreadId !== undefined) {
+      // Telegram "topics" (forum threads) are out of scope this ticket — this adapter never
+      // declares the "thread" capability, so honor that honestly rather than silently
+      // dropping the thread target and sending to the wrong place.
+      throw new ChatterUnsupportedCapabilityError(
+        "this Telegram adapter does not support thread-targeted sends",
+      );
+    }
+
     try {
       const result = await this.#api.sendMessage(
         Number(input.conversation.providerConversationId),

@@ -234,14 +234,14 @@ with no `TELEGRAM_*` environment variables set.
 
 ### Implementation for User Story 5
 
-- [ ] T032 [US5] Implement `getKnownConversation`/`getUnknownConversation` config functions for
+- [X] T032 [US5] Implement `getKnownConversation`/`getUnknownConversation` config functions for
       the conformance suite — `getKnownConversation` feeds a synthetic `Update` through the real
       webhook handler (T024's validated path) to register a chat, mirroring a real webhook
       delivery; `getUnknownConversation` returns a chat ID never delivered — and add
       `packages/telegram/tests/conformance.spec.ts` calling
       `runAccountConformanceSuite({ createAdapter, getKnownConversation, getUnknownConversation
       })` unmodified from `@chatter/testing`. Depends on: T009, T013, T014, T015, T024, T030.
-- [ ] T033 [US5] Run `pnpm -r test` with no `TELEGRAM_*` environment variables set and confirm
+- [X] T033 [US5] Run `pnpm -r test` with no `TELEGRAM_*` environment variables set and confirm
       the full suite, including `conformance.spec.ts`, passes.
 
 **Checkpoint**: All five user stories independently functional — ticket is feature-complete.

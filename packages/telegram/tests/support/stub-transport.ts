@@ -9,6 +9,12 @@ export interface RecordedCall {
 const DEFAULT_BOT_ID = 987_654_321;
 
 /**
+ * A chat ID the stub always rejects as unknown to Telegram — a stand-in for a chat the bot
+ * has never interacted with, used by the conformance suite's `getUnknownConversation()`.
+ */
+export const UNKNOWN_CHAT_ID = -999_999_999;
+
+/**
  * Wraps a grammY `Api` instance with a transformer that intercepts every outbound call
  * before any real HTTP request is made — no real network access anywhere in this harness.
  * Sensible defaults are returned for getMe/sendMessage/setWebhook/deleteWebhook; queue a
@@ -68,6 +74,9 @@ export class StubTelegramTransport {
           },
         };
       case "sendMessage": {
+        if (payload.chat_id === UNKNOWN_CHAT_ID) {
+          return { ok: false, error_code: 400, description: "Bad Request: chat not found" };
+        }
         this.#sentMessageCounter += 1;
         return {
           ok: true,
