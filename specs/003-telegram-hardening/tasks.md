@@ -32,10 +32,10 @@ package this ticket.
 depend on this phase and could technically start in parallel, but are sequenced after it here
 for a single linear implementation pass.
 
-- [ ] T001 [P] Implement `UpdateDedupWindow` (bounded `Map`-based FIFO set, capacity 1000,
+- [X] T001 [P] Implement `UpdateDedupWindow` (bounded `Map`-based FIFO set, capacity 1000,
       `has(updateId)`/`record(updateId)`) in
       `packages/telegram/src/dedup/update-dedup-window.ts`, per data-model.md.
-- [ ] T002 [P] Write unit tests for `UpdateDedupWindow`: membership after `record()`, no-op on
+- [X] T002 [P] Write unit tests for `UpdateDedupWindow`: membership after `record()`, no-op on
       re-recording an existing ID, oldest entry evicted once capacity is exceeded, in
       `packages/telegram/tests/unit/update-dedup-window.spec.ts`.
 
