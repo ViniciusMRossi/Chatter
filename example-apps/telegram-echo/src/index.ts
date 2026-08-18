@@ -76,3 +76,29 @@ const server = createServer((req, res) => {
 server.listen(port, () => {
   console.log(`telegram-echo listening on :${String(port)}, webhook path ${webhookPath}`);
 });
+
+// Without this, Ctrl+C (or a process manager sending SIGTERM) just kills the process —
+// chatter.stop() never runs, and Telegram is left with a webhook registration pointing at
+// a server that's no longer there.
+let shuttingDown = false;
+function shutdown(signal: NodeJS.Signals): void {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+  console.log(`Received ${signal}, shutting down...`);
+  chatter
+    .stop()
+    .then(() => {
+      server.close(() => {
+        process.exit(0);
+      });
+    })
+    .catch((error: unknown) => {
+      console.error("Failed to shut down cleanly", error);
+      process.exit(1);
+    });
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
