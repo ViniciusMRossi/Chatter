@@ -15,7 +15,7 @@ describe("round trip via the fake adapter", () => {
       await chatter.send({
         account: event.account,
         conversation: event.message.conversation,
-        text: `echo: ${event.message.text}`,
+        text: `echo: ${event.message.text ?? ""}`,
         replyToMessageId: event.message.id,
       });
     });

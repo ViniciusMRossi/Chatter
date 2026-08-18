@@ -57,9 +57,10 @@ your bot at all. This is a Telegram platform behavior, not something Chatter con
 - `text` — sending and receiving plain text messages.
 - `reply` — replying to a specific prior message (Telegram's native reply-to-message feature).
 
-Not supported this release: `thread` (Telegram's "topics"/forum-thread feature). A send
-targeting a thread reference rejects with `ChatterUnsupportedCapabilityError` rather than
-silently sending to the wrong place.
+Not supported this release: `thread` (Telegram's "topics"/forum-thread feature) and
+`attachments`. A send targeting a thread reference, or carrying an attachment, rejects with
+`ChatterUnsupportedCapabilityError` rather than silently sending to the wrong place or dropping
+the attachment.
 
 ## Known limitations
 
@@ -68,7 +69,10 @@ silently sending to the wrong place.
   posting/reading isn't a supported flow yet.
 - Message edits, deletions, reactions, and interactive components (inline keyboards, commands)
   are not normalized this release.
-- Attachments/media are not yet represented — only text messages are normalized.
+- Attachments/media are not yet represented — only text messages are normalized. `@chatter/core`'s
+  `Message.text`/`SendInput.text` are optional (to support attachment-only messages on adapters
+  that do support them), but this adapter still requires `text` to send anything — a `send()`
+  call with no `text` rejects with `ChatterConfigurationError`.
 - Only webhook-based delivery is supported; long polling is not implemented.
 
 ## Error mapping

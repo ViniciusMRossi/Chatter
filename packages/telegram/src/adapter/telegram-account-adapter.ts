@@ -105,6 +105,22 @@ export class TelegramAccountAdapter implements AccountAdapter {
         "this Telegram adapter does not support thread-targeted sends",
       );
     }
+    if (input.attachment !== undefined) {
+      // Attachment mapping is out of scope this ticket (see specs/004-attachment-model) —
+      // this adapter never declares the "attachments" capability, so honor that honestly
+      // rather than silently dropping the attachment or misreporting the failure reason.
+      throw new ChatterUnsupportedCapabilityError(
+        "this Telegram adapter does not support attachments",
+      );
+    }
+    if (input.text === undefined) {
+      // @chatter/core's SendInput.text became optional to support attachment-only sends
+      // (see specs/004-attachment-model) — this adapter doesn't implement attachments yet
+      // (that's the next ticket), so text is still required here for now.
+      throw new ChatterConfigurationError(
+        "this Telegram adapter requires message text — attachment-only sends are not yet supported",
+      );
+    }
     if (input.text.length > TELEGRAM_TEXT_LIMIT) {
       throw new ChatterConfigurationError(
         `Telegram message text exceeds the ${String(TELEGRAM_TEXT_LIMIT)}-character limit (got ${String(input.text.length)} characters)`,

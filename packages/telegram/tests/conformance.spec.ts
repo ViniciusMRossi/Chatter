@@ -1,4 +1,4 @@
-import type { AccountAdapter, Conversation } from "@chatter/core";
+import type { AccountAdapter, Attachment, Conversation } from "@chatter/core";
 import { runAccountConformanceSuite } from "@chatter/testing";
 import { TelegramAccountAdapter } from "../src/adapter/telegram-account-adapter.js";
 import { mapConversation } from "../src/mapping/conversation.js";
@@ -65,5 +65,12 @@ runAccountConformanceSuite({
     providerAccountId: "987654321",
     providerConversationId: String(UNKNOWN_CHAT_ID),
     type: "direct",
+  }),
+
+  // This adapter doesn't declare "attachments" yet (that's the next ticket) — the suite's
+  // supported-attachment check is a no-op here; only the unsupported-rejection check runs.
+  getTestAttachment: (): Attachment => ({
+    kind: "file",
+    source: { data: Buffer.from("conformance attachment") },
   }),
 });

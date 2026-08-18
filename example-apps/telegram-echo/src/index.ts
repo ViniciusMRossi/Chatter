@@ -25,12 +25,12 @@ const webhookHandler = createTelegramWebhookHandler(adapter);
 // chat — no Telegram-specific branching here at all.
 chatter.on("message.created", async (event) => {
   console.log(
-    `[${event.message.conversation.type}] ${event.message.sender.displayName ?? "?"}: ${event.message.text}`,
+    `[${event.message.conversation.type}] ${event.message.sender.displayName ?? "?"}: ${event.message.text ?? ""}`,
   );
   await chatter.send({
     account: event.account,
     conversation: event.message.conversation,
-    text: `echo: ${event.message.text}`,
+    text: `echo: ${event.message.text ?? ""}`,
     replyToMessageId: event.message.id,
   });
 });
