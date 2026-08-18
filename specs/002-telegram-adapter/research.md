@@ -4,29 +4,44 @@ All Technical Context items were resolvable from the ratified stack decisions
 (`Docs/Tech-Stack-Constitution.md`), the ticket #1 contract, and the human's Phase 2 answers
 (webhook transport, grammY) — no open unknowns remain.
 
-## Decision: Wrap grammY's `webhookCallback()`, validate the secret ourselves, first
+## Decision: Standalone grammY `Api` client + our own `Update` parsing, not `Bot`/`webhookCallback`
 
-**Decision**: The exposed webhook handler is our own function with signature
-`(request: Request) => Promise<Response>`. Internally it: (1) reads the
-`X-Telegram-Bot-Api-Secret-Token` header directly from the raw request, (2) compares it against
-the configured secret using `node:crypto`'s `timingSafeEqual`, (3) only if that passes, hands the
-request off to grammY's own `webhookCallback(bot, "std/http")` (or equivalent generic adapter) to
-parse the Telegram `Update` body and drive the bot instance.
+**Decision**: `@chatter/telegram` uses grammY's standalone `Api` class (`new Api(botToken)`,
+outbound calls + generated TypeScript types) for everything outbound, and parses inbound
+`Update` JSON bodies directly against `@grammyjs/types`' `Update` type — it does not use
+grammY's `Bot`/`Composer` middleware system or the `webhookCallback()` helper originally
+sketched in this plan.
 
-**Rationale**: FR-003 requires rejecting unauthenticated requests *before* normalizing or
-dispatching anything — if secret validation happened inside or after grammY's own request
-handling, a malformed-but-unauthenticated request could still cause parsing work or, worse, a
-future grammY version could dispatch before our check runs. Validating the header ourselves,
-first, against the raw request, removes that ordering dependency entirely. `timingSafeEqual`
-requires equal-length buffers; a length mismatch (e.g. no header at all) is treated as "not
-equal" without ever calling it, so a missing header can't throw past the check.
+The exposed webhook handler is our own function, `(request: Request) => Promise<Response>`.
+Internally it: (1) reads the `X-Telegram-Bot-Api-Secret-Token` header directly from the raw
+request, (2) compares it against the configured secret using `node:crypto`'s `timingSafeEqual`,
+(3) only if that passes, parses the JSON body as an `Update`, maps `update.message` (when
+present and it has `text`) to an `InboundMessage`, and calls `dispatch`.
 
-**Alternatives considered**: Relying on a grammY plugin/middleware for secret validation
-(rejected — inspected grammY's own webhook helpers; they do support secret-token checking, but
-mixing our validation timing with an SDK's own internal request lifecycle for a security-critical
-gate is exactly the coupling the constitution's Principle VI is trying to avoid — doing it
-ourselves is more auditable and doesn't depend on tracking a dependency's internal behavior
-across upgrades).
+**Rationale**: Inspecting grammY's actual API surface during implementation showed the `Bot`/
+`Composer`/`webhookCallback` stack is designed around registering middleware (`bot.on("message",
+ctx => ...)`) and requires `bot.init()` lifecycle management — none of which this adapter needs,
+since we already have our own dispatch mechanism from ticket #1's `AccountAdapter` contract.
+Pulling in that machinery would add a second routing/lifecycle system on top of the one we
+already own, for no benefit — a violation of the "don't add abstractions beyond what the task
+requires" project guidance. The standalone `Api` class gives us exactly what we need (typed,
+documented Bot API method calls) with far less surface area, and its `api.config.use(transformer)`
+hook is a clean seam for the non-live test harness (see the test-strategy decision below) — a
+transformer intercepts every outbound call before any real HTTP request is made, which the
+heavier `Bot` stack does not make meaningfully easier.
+
+FR-003 still requires rejecting unauthenticated requests *before* normalizing or dispatching
+anything; doing our own parsing (rather than handing the raw request to an SDK helper first)
+keeps that ordering fully in our own code, not dependent on a dependency's internal request
+lifecycle. `timingSafeEqual` requires equal-length buffers; a length mismatch (e.g. no header at
+all) is treated as "not equal" without ever calling it, so a missing header can't throw past the
+check.
+
+**Alternatives considered**: grammY's `webhookCallback()` + `Bot`/`Composer` (originally planned
+— rejected after inspecting the actual API during implementation, per above). Relying on
+grammY's own built-in `secretToken` webhook option instead of our own check (rejected — same
+reasoning as before: a security-critical gate should live in our own auditable code, not depend
+on tracking an SDK's internal behavior across upgrades).
 
 ## Decision: Telegram `chat.type` → Chatter `ConversationType` mapping
 
@@ -70,13 +85,16 @@ violates constitution Principle V; also risks leaking the bot token, since `Gram
 directly — this is exactly why FR-001's "never log the token" requirement extends to error
 messages, not just deliberate log lines).
 
-## Decision: Non-live test strategy — stub the transport, not the network
+## Decision: Non-live test strategy — stub the transport via grammY's own transformer hook
 
-**Decision**: Tests construct a grammY `Bot` (or an equivalent minimal client) with its outbound
-HTTP transport replaced by an in-memory stub that records calls and returns canned responses
-(success payloads, or synthetic Telegram error payloads per the mapping table above). Inbound
-tests POST synthetic `Update` JSON bodies (with the correct secret header) directly at the
-webhook handler function, in-process — no real HTTP server, no real network socket.
+**Decision**: Tests construct the adapter's `Api` instance and install an
+`api.config.use(transformer)` function that intercepts every outbound Bot API call before any
+real HTTP request is made, records it for assertions, and returns a canned `ApiResponse`
+(success, or a synthetic Telegram error payload per the mapping table above — grammY itself
+converts an `{ok: false, ...}` response into the thrown `GrammyError` our error-mapping layer
+consumes, so the stub only needs to fabricate the wire-level JSON, not grammY's error classes).
+Inbound tests POST synthetic `Update` JSON bodies (with the correct secret header) directly at
+the webhook handler function, in-process — no real HTTP server, no real network socket.
 
 **Rationale**: Satisfies FR-010/NFR-009 (zero real credentials, CI-safe) while still exercising
 the adapter's actual mapping and error-handling code paths, not a hand-rolled reimplementation of

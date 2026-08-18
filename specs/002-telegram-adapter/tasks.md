@@ -30,15 +30,15 @@ non-package example app at `example-apps/telegram-echo/`.
 
 **Purpose**: New-package scaffolding, mirroring ticket #1's `packages/testing` shape.
 
-- [ ] T001 Create `packages/telegram/package.json` (`"name": "@chatter/telegram"`, `"type":
+- [X] T001 Create `packages/telegram/package.json` (`"name": "@chatter/telegram"`, `"type":
       "module"`, depends on `@chatter/core` via `workspace:*`) and
       `packages/telegram/tsconfig.json` (extends `tsconfig.base.json`, `composite: true`,
       references `../core`), matching `packages/testing`'s shape from ticket #1.
-- [ ] T002 [P] Add `grammy` as a runtime dependency of `packages/telegram`.
-- [ ] T003 [P] Configure `packages/telegram/vitest.config.ts` and
+- [X] T002 [P] Add `grammy` as a runtime dependency of `packages/telegram`.
+- [X] T003 [P] Configure `packages/telegram/vitest.config.ts` and
       `packages/telegram/tsconfig.eslint.json` (include `src`, `tests`, `*.config.ts`), matching
       the existing packages' pattern.
-- [ ] T004 [P] Add `example-apps/*` to the `packages:` glob in `pnpm-workspace.yaml`, and create
+- [X] T004 [P] Add `example-apps/*` to the `packages:` glob in `pnpm-workspace.yaml`, and create
       `example-apps/telegram-echo/package.json` + `tsconfig.json` (depends on `@chatter/core` and
       `@chatter/telegram` via `workspace:*`; not published — no `exports`/`files` fields needed).
 
@@ -54,25 +54,25 @@ transport test harness every user story below depends on.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 [P] Define `TelegramAccountConfig` (`botToken`, `webhookSecret`, `webhookUrl`) in
+- [X] T005 [P] Define `TelegramAccountConfig` (`botToken`, `webhookSecret`, `webhookUrl`) in
       `packages/telegram/src/config/telegram-account-config.ts`, per data-model.md.
-- [ ] T006 [P] Implement Telegram `chat.type` → `ConversationType` mapping and
+- [X] T006 [P] Implement Telegram `chat.type` → `ConversationType` mapping and
       Chat/User → `Conversation`/`Participant` mapping in
       `packages/telegram/src/mapping/{conversation,participant}.ts`, per data-model.md's mapping
       tables (`"private"`→`"direct"`, `"group"`/`"supergroup"`→`"group"`, else→`"unknown"`).
-- [ ] T007 [P] Implement Telegram `message` → `Message` mapping in
+- [X] T007 [P] Implement Telegram `message` → `Message` mapping in
       `packages/telegram/src/mapping/message.ts` (id, text, createdAt, replyToMessageId).
       Depends on: T006.
-- [ ] T008 Implement the Telegram error → `ChatterError` mapping function in
+- [X] T008 Implement the Telegram error → `ChatterError` mapping function in
       `packages/telegram/src/errors/map-telegram-error.ts` per research.md's mapping table
       (401→ChatterAuthenticationError, chat-not-found/blocked→ChatterInvalidTargetError,
       429→ChatterRateLimitError with `retryAfterMs`, network/5xx→ChatterProviderUnavailableError,
       else→ChatterUnknownError with `cause`), sanitizing the bot token out of any message it
       constructs.
-- [ ] T009 Build a stubbed grammY transport test harness (records outbound calls, returns canned
+- [X] T009 Build a stubbed grammY transport test harness (records outbound calls, returns canned
       success/error payloads) in `packages/telegram/tests/support/stub-transport.ts` — shared
       infrastructure every later test in this ticket uses to avoid real network calls.
-- [ ] T010 [P] Add `packages/telegram/src/index.ts` barrel export scaffold (re-exporting as each
+- [X] T010 [P] Add `packages/telegram/src/index.ts` barrel export scaffold (re-exporting as each
       piece below lands). Depends on: T005, T006, T007, T008.
 
 **Checkpoint**: Config, mapping, and error-translation logic compile and are exported; the test
@@ -91,30 +91,30 @@ secret) and confirm a `message.created` event with conversation type `"direct"`;
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T011 [P] [US1] Write failing unit test: `chat.type: "private"` maps to conversation type
+- [X] T011 [P] [US1] Write failing unit test: `chat.type: "private"` maps to conversation type
       `"direct"` in `packages/telegram/tests/unit/mapping.spec.ts`.
-- [ ] T012 [P] [US1] Write failing integration test: a synthetic direct-chat `Update` POSTed to
+- [X] T012 [P] [US1] Write failing integration test: a synthetic direct-chat `Update` POSTed to
       the webhook handler dispatches one normalized `message.created` event; a subsequent
       `send()` reply is recorded by the stubbed transport with the correct chat ID and
       `reply_parameters`, in `packages/telegram/tests/integration/direct-chat.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement `TelegramAccountAdapter.start()` (`getMe()` to resolve
+- [X] T013 [US1] Implement `TelegramAccountAdapter.start()` (`getMe()` to resolve
       `providerAccountId`, throwing `ChatterAuthenticationError` on failure per data-model.md;
       then `setWebhook` registration) and `stop()` (`deleteWebhook`, clear stored dispatch;
       must not throw if `start()` never completed) in
       `packages/telegram/src/adapter/telegram-account-adapter.ts`. Depends on: T005, T008, T009.
-- [ ] T014 [US1] Implement `TelegramAccountAdapter.send()` (Telegram `sendMessage` with
+- [X] T014 [US1] Implement `TelegramAccountAdapter.send()` (Telegram `sendMessage` with
       `reply_parameters` when `replyToMessageId` is set; maps the response to
       `AdapterDeliveryResult`; routes failures through the T008 error mapper) in the same file.
       Depends on: T013.
-- [ ] T015 [US1] Implement `createTelegramWebhookHandler()` (parses the `Update` body, applies
+- [X] T015 [US1] Implement `createTelegramWebhookHandler()` (parses the `Update` body, applies
       the T007 message mapping, calls `dispatch`) in
       `packages/telegram/src/webhook/telegram-webhook-handler.ts`. Depends on: T006, T007, T013.
-- [ ] T016 [US1] Wire `packages/telegram/src/index.ts` to export `TelegramAccountAdapter`,
+- [X] T016 [US1] Wire `packages/telegram/src/index.ts` to export `TelegramAccountAdapter`,
       `createTelegramWebhookHandler`, and `TelegramAccountConfig`. Depends on: T013, T014, T015.
-- [ ] T017 [US1] Run `pnpm -r test` and confirm T011 and T012 now pass.
+- [X] T017 [US1] Run `pnpm -r test` and confirm T011 and T012 now pass.
 
 **Checkpoint**: User Story 1 fully functional and independently testable — this is the MVP for
 this ticket.
@@ -131,17 +131,17 @@ confirm conversation type `"group"`, with a reply routing back to the correct gr
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T018 [P] [US2] Write failing unit test: `chat.type: "group"` and `chat.type:
+- [X] T018 [P] [US2] Write failing unit test: `chat.type: "group"` and `chat.type:
       "supergroup"` both map to conversation type `"group"`, in
       `packages/telegram/tests/unit/mapping.spec.ts`.
-- [ ] T019 [P] [US2] Write failing integration test: a synthetic group-chat `Update` round-trips
+- [X] T019 [P] [US2] Write failing integration test: a synthetic group-chat `Update` round-trips
       through the same webhook handler and `send()` path as US1, with a conversation reference
       distinct from the US1 direct-chat one, in
       `packages/telegram/tests/integration/group-chat.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Verify/adjust the T006 conversation mapping and T013-T015 adapter/handler code
+- [X] T020 [US2] Verify/adjust the T006 conversation mapping and T013-T015 adapter/handler code
       handle group chats correctly with no group-specific branching beyond the mapping table
       itself, in `packages/telegram/src/mapping/conversation.ts`. Depends on: T006, T013, T015.
       Run `pnpm -r test` and confirm T018 and T019 pass.
@@ -161,17 +161,17 @@ secret; confirm only the last one results in dispatch.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T021 [P] [US3] Write failing unit test: a webhook request with no secret header is
+- [X] T021 [P] [US3] Write failing unit test: a webhook request with no secret header is
       rejected (401-equivalent `Response`) and `dispatch` is never called, in
       `packages/telegram/tests/unit/webhook-security.spec.ts`.
-- [ ] T022 [P] [US3] Write failing unit test: a webhook request with an incorrect secret is
+- [X] T022 [P] [US3] Write failing unit test: a webhook request with an incorrect secret is
       rejected the same way, in the same file.
-- [ ] T023 [P] [US3] Write failing unit test: a webhook request with the correct secret is
+- [X] T023 [P] [US3] Write failing unit test: a webhook request with the correct secret is
       accepted and processed normally, in the same file.
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] Implement timing-safe secret validation (`crypto.timingSafeEqual`, handling the
+- [X] T024 [US3] Implement timing-safe secret validation (`crypto.timingSafeEqual`, handling the
       missing-header/length-mismatch case without calling it) as the first step of
       `createTelegramWebhookHandler()`, before any `Update` body parsing, in
       `packages/telegram/src/webhook/telegram-webhook-handler.ts`. Depends on: T015. Run
@@ -192,30 +192,30 @@ resulting error type, `retryable`/`retryAfterMs` where relevant, and capability 
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T025 [P] [US4] Write failing unit test: a synthetic 401 "Unauthorized" response maps to
+- [X] T025 [P] [US4] Write failing unit test: a synthetic 401 "Unauthorized" response maps to
       `ChatterAuthenticationError`, in `packages/telegram/tests/unit/errors.spec.ts`.
-- [ ] T026 [P] [US4] Write failing unit test: synthetic "chat not found" (400) and "bot was
+- [X] T026 [P] [US4] Write failing unit test: synthetic "chat not found" (400) and "bot was
       blocked"/"kicked" (403) responses both map to `ChatterInvalidTargetError`, in the same
       file.
-- [ ] T027 [P] [US4] Write failing unit test: a synthetic 429 response with `retry_after: 5`
+- [X] T027 [P] [US4] Write failing unit test: a synthetic 429 response with `retry_after: 5`
       maps to `ChatterRateLimitError` with `retryable: true` and `retryAfterMs: 5000`, in the
       same file.
-- [ ] T028 [P] [US4] Write failing unit test: `TelegramAccountAdapter.getCapabilities()` returns
+- [X] T028 [P] [US4] Write failing unit test: `TelegramAccountAdapter.getCapabilities()` returns
       exactly `{"text", "reply"}` — `has("thread")` is `false` — in
       `packages/telegram/tests/unit/capabilities.spec.ts`.
-- [ ] T029 [P] [US4] Write failing unit test: triggering an authentication failure with a known
+- [X] T029 [P] [US4] Write failing unit test: triggering an authentication failure with a known
       bot token/webhook secret produces an error whose `message` (and any `cause` chain) does
       not contain either secret value, in
       `packages/telegram/tests/unit/secret-redaction.spec.ts`.
 
 ### Implementation for User Story 4
 
-- [ ] T030 [US4] Complete the T008 error-mapping function to cover every case above and ensure
+- [X] T030 [US4] Complete the T008 error-mapping function to cover every case above and ensure
       every `TelegramAccountAdapter` call site (`start()`, `send()`) routes grammY-originated
       errors through it rather than propagating them raw, in
       `packages/telegram/src/errors/map-telegram-error.ts` and
       `packages/telegram/src/adapter/telegram-account-adapter.ts`. Depends on: T008, T013, T014.
-- [ ] T031 [US4] Set `getCapabilities()` to return exactly `{"text", "reply"}` in
+- [X] T031 [US4] Set `getCapabilities()` to return exactly `{"text", "reply"}` in
       `packages/telegram/src/adapter/telegram-account-adapter.ts`. Depends on: T013. Run
       `pnpm -r test` and confirm T025-T029 pass.
 
@@ -234,14 +234,14 @@ with no `TELEGRAM_*` environment variables set.
 
 ### Implementation for User Story 5
 
-- [ ] T032 [US5] Implement `getKnownConversation`/`getUnknownConversation` config functions for
+- [X] T032 [US5] Implement `getKnownConversation`/`getUnknownConversation` config functions for
       the conformance suite — `getKnownConversation` feeds a synthetic `Update` through the real
       webhook handler (T024's validated path) to register a chat, mirroring a real webhook
       delivery; `getUnknownConversation` returns a chat ID never delivered — and add
       `packages/telegram/tests/conformance.spec.ts` calling
       `runAccountConformanceSuite({ createAdapter, getKnownConversation, getUnknownConversation
       })` unmodified from `@chatter/testing`. Depends on: T009, T013, T014, T015, T024, T030.
-- [ ] T033 [US5] Run `pnpm -r test` with no `TELEGRAM_*` environment variables set and confirm
+- [X] T033 [US5] Run `pnpm -r test` with no `TELEGRAM_*` environment variables set and confirm
       the full suite, including `conformance.spec.ts`, passes.
 
 **Checkpoint**: All five user stories independently functional — ticket is feature-complete.
@@ -253,19 +253,19 @@ with no `TELEGRAM_*` environment variables set.
 **Purpose**: Documentation, the example app, and final verification, once every story above is
 done.
 
-- [ ] T034 [P] Write `packages/telegram/README.md`: BotFather bot creation, obtaining a token,
+- [X] T034 [P] Write `packages/telegram/README.md`: BotFather bot creation, obtaining a token,
       webhook setup (including local-tunnel guidance), required permissions, supported
       capabilities, and known limitations, per FR-011/NFR-011.
-- [ ] T035 [P] Build `example-apps/telegram-echo/src/index.ts` (the same handler shape as
+- [X] T035 [P] Build `example-apps/telegram-echo/src/index.ts` (the same handler shape as
       ticket #1's illustrative example, wired to `@chatter/telegram`, with a minimal Node `http`
       server exposing the webhook handler) and `example-apps/telegram-echo/README.md` (how to
       run it against a real bot + tunnel), per FR-012 and quickstart.md's manual-validation
       section.
-- [ ] T036 [P] Walk through quickstart.md's automated section end-to-end, and check the manual
+- [X] T036 [P] Walk through quickstart.md's automated section end-to-end, and check the manual
       section's commands/instructions are internally consistent with the actual example app and
       adapter code (a real Telegram bot isn't available in this environment, so the manual tier
       is a documentation-consistency check here, not a live run).
-- [ ] T037 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
+- [X] T037 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
       pass before opening the pull request.
 
 ---

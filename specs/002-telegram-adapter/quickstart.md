@@ -56,6 +56,7 @@ incorrect secret.
 ## Error-path checks (Story 4)
 
 Covered by the automated suite (`pnpm -r test`), not manual steps — synthetic Telegram error
-responses (401, "chat not found", 429 with `retry_after`) are fed through the stubbed transport
-and asserted against the corresponding `ChatterError` subclass. See
-`packages/telegram/tests/unit/errors.spec.ts` once implemented.
+responses (401, "chat not found", "bot was blocked", 429 with `retry_after`) are fed through the
+stubbed transport and asserted against the corresponding `ChatterError` subclass. See
+`packages/telegram/tests/unit/errors.spec.ts`, `capabilities.spec.ts`, and
+`secret-redaction.spec.ts`.

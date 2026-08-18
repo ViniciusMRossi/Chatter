@@ -1,0 +1,22 @@
+{
+  "name": "telegram-echo-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --build tsconfig.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@chatter/core": "workspace:*",
+    "@chatter/telegram": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

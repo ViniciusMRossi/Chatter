@@ -6,3 +6,6 @@ path.
 
 ## 2026-08-17 — 1 (unspecified)
 Core package foundation: normalized types, adapter contract, Chatter orchestrator, typed errors, fake adapter, and adapter-agnostic conformance suite (issues #1-#34)
+
+## 2026-08-18 — 36 (unspecified)
+Telegram provider adapter: webhook-based inbound (direct+group chats), outbound send/reply via grammY, typed error mapping, capability enforcement, conformance-suite compliance, example app (issues #36-#72)
