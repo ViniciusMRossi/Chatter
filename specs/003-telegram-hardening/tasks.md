@@ -53,22 +53,22 @@ assert the application handler fires exactly once.
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T003 [P] [US1] Write failing integration test: the same `update_id` delivered twice via
+- [X] T003 [P] [US1] Write failing integration test: the same `update_id` delivered twice via
       the webhook handler results in exactly one dispatched inbound message (second delivery
       still returns HTTP 200), in `packages/telegram/tests/integration/duplicate-delivery.spec.ts`.
-- [ ] T004 [P] [US1] Write failing test (same file): a distinct, unseen `update_id` delivered
+- [X] T004 [P] [US1] Write failing test (same file): a distinct, unseen `update_id` delivered
       after several prior distinct updates is still dispatched normally.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Add `hasProcessedUpdate(updateId)` / `recordProcessedUpdate(updateId)` to
+- [X] T005 [US1] Add `hasProcessedUpdate(updateId)` / `recordProcessedUpdate(updateId)` to
       `TelegramAccountAdapter`, backed by a `UpdateDedupWindow` instance, in
       `packages/telegram/src/adapter/telegram-account-adapter.ts`. Depends on: T001.
-- [ ] T006 [US1] Wire `createTelegramWebhookHandler()` to check `hasProcessedUpdate()` before
+- [X] T006 [US1] Wire `createTelegramWebhookHandler()` to check `hasProcessedUpdate()` before
       dispatch and call `recordProcessedUpdate()` after a successful dispatch — always
       returning HTTP 200 either way (Telegram must not be told to retry) — in
       `packages/telegram/src/webhook/telegram-webhook-handler.ts`. Depends on: T005.
-- [ ] T007 [US1] Run `pnpm -r test` and confirm T003 and T004 now pass.
+- [X] T007 [US1] Run `pnpm -r test` and confirm T003 and T004 now pass.
 
 **Checkpoint**: User Story 1 fully functional and independently testable — this is the MVP for
 this ticket.

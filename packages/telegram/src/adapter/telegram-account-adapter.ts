@@ -10,6 +10,7 @@ import {
 import { timingSafeEqual } from "node:crypto";
 import { Api } from "grammy";
 import type { TelegramAccountConfig } from "../config/telegram-account-config.js";
+import { UpdateDedupWindow } from "../dedup/update-dedup-window.js";
 import { mapTelegramError } from "../errors/map-telegram-error.js";
 
 const CAPABILITIES: ReadonlySet<Capability> = new Set(["text", "reply"]);
@@ -24,6 +25,7 @@ export class TelegramAccountAdapter implements AccountAdapter {
 
   readonly #config: TelegramAccountConfig;
   readonly #api: Api;
+  readonly #dedupWindow = new UpdateDedupWindow();
   #botUserId: string | undefined;
   #dispatch: ((message: InboundMessage) => void) | undefined;
 
@@ -108,6 +110,16 @@ export class TelegramAccountAdapter implements AccountAdapter {
   /** Used by createTelegramWebhookHandler() to forward a mapped inbound message. */
   dispatchInbound(message: InboundMessage): void {
     this.#dispatch?.(message);
+  }
+
+  /** Used by createTelegramWebhookHandler() to skip redelivered updates. */
+  hasProcessedUpdate(updateId: number): boolean {
+    return this.#dedupWindow.has(updateId);
+  }
+
+  /** Used by createTelegramWebhookHandler() to mark an update as processed. */
+  recordProcessedUpdate(updateId: number): void {
+    this.#dedupWindow.record(updateId);
   }
 
   /**
