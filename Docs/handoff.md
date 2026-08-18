@@ -1,18 +1,18 @@
 # Handoff
 
-_Last updated: 2026-08-18 12:50 UTC by unspecified (ticket-complete)_
+_Last updated: 2026-08-18 13:59 UTC by unspecified (ticket-complete)_
 
 ## Where we are
-- Branch: 36-telegram-provider-adapter
-- Ticket: 36
+- Branch: 74-telegram-adapter-hardening
+- Ticket: 74
 
 ## Recent commits
 ```
-84c6cb4 docs: package READMEs, example app, quickstart corrections, prettier pass (T034-T037)
-23343bd feat(telegram): conformance suite compliance + capability enforcement (T032-T033, US5)
-40375f7 test: verify typed error mapping, capabilities, secret redaction (T025-T031, US4)
-104b1b2 test: verify webhook secret validation (T021-T024, US3)
-0ba08aa test: verify group-chat round trip (T018-T020, US2)
+dfd5b00 docs: package README updates and prettier pass (T018-T020)
+96a2dde docs(telegram): manual real-bot verification checklist (T017, US5)
+fc0fd40 feat(telegram): observable shutdown cleanup failures (T014-T016, US4)
+7cfad46 feat(telegram): pre-validate outbound message length (T011-T013, US3)
+a8e1f68 feat(telegram): surface migrate_to_chat_id on send failures (T008-T010, US2)
 ```
 
 ## Uncommitted changes
@@ -21,7 +21,7 @@ none
 ```
 
 ## Next step
-Telegram provider adapter: webhook-based inbound (direct+group chats), outbound send/reply via grammY, typed error mapping, capability enforcement, conformance-suite compliance, example app (issues #36-#72)
+Telegram adapter hardening: update_id dedup, migrate_to_chat_id surfacing, message-length pre-validation, non-silent stop() cleanup, manual verification checklist (issues #74-#93)
 
 ## Open questions / blockers
 _(edit as needed)_
