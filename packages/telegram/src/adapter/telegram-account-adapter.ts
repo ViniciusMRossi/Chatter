@@ -21,6 +21,12 @@ const TELEGRAM_TEXT_LIMIT = 4096;
 export interface TelegramAccountAdapterOptions {
   /** Injectable for testing — defaults to a real grammY `Api` client. */
   readonly api?: Api;
+  /**
+   * Called when a best-effort cleanup step fails without preventing `stop()` from resolving
+   * (e.g. `deleteWebhook` failing). Receives only a pre-sanitized message string — never the
+   * raw error, bot token, or webhook secret. Defaults to `console.error`.
+   */
+  readonly onNonFatalError?: (message: string) => void;
 }
 
 export class TelegramAccountAdapter implements AccountAdapter {
@@ -29,12 +35,16 @@ export class TelegramAccountAdapter implements AccountAdapter {
   readonly #config: TelegramAccountConfig;
   readonly #api: Api;
   readonly #dedupWindow = new UpdateDedupWindow();
+  readonly #onNonFatalError: (message: string) => void;
   #botUserId: string | undefined;
   #dispatch: ((message: InboundMessage) => void) | undefined;
 
   constructor(config: TelegramAccountConfig, options?: TelegramAccountAdapterOptions) {
     this.#config = config;
     this.#api = options?.api ?? new Api(config.botToken);
+    this.#onNonFatalError = options?.onNonFatalError ?? ((message) => {
+      console.error(message);
+    });
   }
 
   getCapabilities(): ReadonlySet<Capability> {
@@ -75,8 +85,11 @@ export class TelegramAccountAdapter implements AccountAdapter {
     }
     try {
       await this.#api.deleteWebhook();
-    } catch {
-      // Best-effort cleanup on stop(); nothing more useful to do if this fails.
+    } catch (error) {
+      // Best-effort cleanup — stop() still resolves either way — but the failure must be
+      // discoverable rather than silently discarded. Routed through mapTelegramError first
+      // so the surfaced message is sanitized the same way every other error path is.
+      this.#onNonFatalError(mapTelegramError(error).message);
     }
     this.#dispatch = undefined;
   }

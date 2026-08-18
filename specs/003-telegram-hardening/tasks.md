@@ -138,15 +138,15 @@ injected callback and confirm both that `stop()` resolves and the callback fired
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T014 [P] [US4] Write failing unit test: `stop()` with a queued `deleteWebhook` failure
+- [X] T014 [P] [US4] Write failing unit test: `stop()` with a queued `deleteWebhook` failure
       still resolves without throwing, and an injected `onNonFatalError` spy is called, in
       `packages/telegram/tests/unit/stop-cleanup.spec.ts`.
-- [ ] T015 [P] [US4] Write failing unit test (same file): the message passed to
+- [X] T015 [P] [US4] Write failing unit test (same file): the message passed to
       `onNonFatalError` never contains the adapter's configured bot token or webhook secret.
 
 ### Implementation for User Story 4
 
-- [ ] T016 [US4] Add `onNonFatalError?: (message: string) => void` to
+- [X] T016 [US4] Add `onNonFatalError?: (message: string) => void` to
       `TelegramAccountAdapterOptions` (default: `console.error`); on a `deleteWebhook` failure
       in `stop()`, route it through the existing `mapTelegramError` sanitization and call
       `onNonFatalError` with the mapped error's message, in
