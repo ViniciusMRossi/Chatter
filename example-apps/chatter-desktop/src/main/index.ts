@@ -6,6 +6,7 @@ import type { TelegramAccountAdapter as TelegramAccountAdapterType } from "@chat
 import {
   dataUrlFromBuffer,
   fetchAttachmentBytes,
+  fetchChatTitle,
   kindFromMimeType,
   mimeTypeFromFileName,
   writeToTempFile,
@@ -57,6 +58,9 @@ let composeConversationKey:
   | ((provider: string, providerAccountId: string, providerConversationId: string) => string)
   | undefined;
 
+/** Set once startChatter() validates env vars — needed for the direct getChat call below. */
+let botTokenForChatLookup: string | undefined;
+
 /** Real Attachment objects (with the real download URL), keyed by message id — never sent to
  *  the renderer directly. See attachment-utils.ts's fetchAttachmentBytes() doc comment. */
 const attachmentsById = new Map<string, Attachment>();
@@ -79,10 +83,12 @@ function sendConversationList(): void {
 
 /**
  * Registers a conversation the first time it's seen (keyed the same way @chatter/core keys
- * conversations internally) and returns its key. The sidebar label is deliberately simple —
- * the sender's display name of whoever first messaged in it — since Conversation itself
- * carries no human-readable title (Chatter's normalized model doesn't have one; a group
- * chat's Telegram "title" never reaches this layer). Good enough for a manual test client.
+ * conversations internally) and returns its key. The sidebar label starts as the first
+ * sender's display name — since Conversation itself carries no human-readable title (Chatter's
+ * normalized model doesn't have one; a group chat's Telegram "title" never reaches that layer)
+ * — and, for a non-direct conversation, is upgraded to the real group name once
+ * fetchChatTitle() resolves (fire-and-forget, via Telegram's Bot API directly — see that
+ * function's doc comment for why this bypasses Chatter entirely).
  */
 function ensureConversation(conversation: Conversation, label: string): ConversationKeyString {
   if (composeConversationKey === undefined) {
@@ -96,6 +102,22 @@ function ensureConversation(conversation: Conversation, label: string): Conversa
   if (!conversations.has(key)) {
     conversations.set(key, { conversation, label });
     sendConversationList();
+
+    if (conversation.type !== "direct" && botTokenForChatLookup !== undefined) {
+      fetchChatTitle(botTokenForChatLookup, conversation.providerConversationId)
+        .then((title) => {
+          if (title !== undefined) {
+            const entry = conversations.get(key);
+            if (entry !== undefined) {
+              conversations.set(key, { ...entry, label: title });
+              sendConversationList();
+            }
+          }
+        })
+        .catch(() => {
+          // fetchChatTitle() already swallows its own errors; nothing else to do here.
+        });
+    }
   }
   return key;
 }
@@ -122,8 +144,9 @@ async function buildMessageView(
     attachmentsById.set(id, attachment);
   }
 
+  const isAudio = attachment?.mimeType?.startsWith("audio/") === true;
   let previewDataUrl: string | undefined;
-  if (attachment?.kind === "image") {
+  if (attachment !== undefined && (attachment.kind === "image" || isAudio)) {
     try {
       const data =
         "data" in attachment.source
@@ -131,7 +154,8 @@ async function buildMessageView(
           : await fetchAttachmentBytes(attachment.source.url);
       previewDataUrl = dataUrlFromBuffer(data, attachment.mimeType);
     } catch (error) {
-      sendStatus(`Failed to load image preview: ${error instanceof Error ? error.message : String(error)}`, "error");
+      const what = attachment.kind === "image" ? "image preview" : "audio";
+      sendStatus(`Failed to load ${what}: ${error instanceof Error ? error.message : String(error)}`, "error");
     }
   }
 
@@ -147,6 +171,7 @@ async function buildMessageView(
           attachment: {
             kind: attachment.kind,
             ...(attachment.fileName !== undefined ? { fileName: attachment.fileName } : {}),
+            ...(attachment.mimeType !== undefined ? { mimeType: attachment.mimeType } : {}),
             ...(attachment.sizeBytes !== undefined ? { sizeBytes: attachment.sizeBytes } : {}),
             ...(previewDataUrl !== undefined ? { previewDataUrl } : {}),
           },
@@ -190,6 +215,7 @@ async function startChatter(): Promise<void> {
   const { Chatter, TelegramAccountAdapter, createTelegramWebhookHandler, conversationKey } =
     await loadChatter();
   composeConversationKey = conversationKey;
+  botTokenForChatLookup = botToken;
 
   const adapter = new TelegramAccountAdapter({ botToken, webhookSecret, webhookUrl });
   chatter = new Chatter({ accounts: [{ accountName: "chatter-desktop", adapter }] });

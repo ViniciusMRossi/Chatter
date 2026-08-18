@@ -157,6 +157,13 @@ body {
   margin-top: 4px;
 }
 
+.message-audio {
+  max-width: 100%;
+  width: 280px;
+  display: block;
+  margin-top: 4px;
+}
+
 .file-chip {
   display: flex;
   align-items: center;

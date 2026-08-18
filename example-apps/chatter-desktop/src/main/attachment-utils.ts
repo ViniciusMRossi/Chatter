@@ -60,3 +60,23 @@ export async function writeToTempFile(data: Buffer, fileName: string): Promise<s
   await writeFile(path, data);
   return path;
 }
+
+/**
+ * @chatter/core's normalized Conversation carries no human-readable title — it's transport-only
+ * by design, and a group's Telegram "title" never reaches that layer (see
+ * packages/telegram/src/mapping/conversation.ts). For the sidebar to show a real group name
+ * instead of a sender's name, this app calls Telegram's Bot API directly, independent of
+ * Chatter entirely. Returns undefined on any failure (private chats have no title at all,
+ * which is also a normal, expected getChat response shape, not an error).
+ */
+export async function fetchChatTitle(botToken: string, chatId: string): Promise<string | undefined> {
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/getChat?chat_id=${encodeURIComponent(chatId)}`,
+    );
+    const body = (await response.json()) as { ok: boolean; result?: { title?: string } };
+    return body.ok ? body.result?.title : undefined;
+  } catch {
+    return undefined;
+  }
+}

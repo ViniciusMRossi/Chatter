@@ -22,8 +22,13 @@ export interface MessageView {
   readonly attachment?: {
     readonly kind: "image" | "video" | "file";
     readonly fileName?: string;
+    readonly mimeType?: string;
     readonly sizeBytes?: number;
-    /** Only set for images — a data: URL, never the original (token-bearing) download URL. */
+    /**
+     * Set for images and playable audio (kind "file" with an "audio/…" mimeType — Telegram
+     * voice messages and audio files both map to "file", see @chatter/telegram's README) — a
+     * data: URL, never the original (token-bearing) download URL.
+     */
     readonly previewDataUrl?: string;
   };
 }

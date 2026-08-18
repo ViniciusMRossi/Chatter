@@ -13,6 +13,7 @@ interface MessageView {
   attachment?: {
     kind: "image" | "video" | "file";
     fileName?: string;
+    mimeType?: string;
     sizeBytes?: number;
     previewDataUrl?: string;
   };
@@ -135,12 +136,22 @@ function renderMessageBubble(message: MessageView): void {
 
   const attachment = message.attachment;
   if (attachment !== undefined) {
+    const isAudio = attachment.mimeType?.startsWith("audio/") === true;
     if (attachment.kind === "image" && attachment.previewDataUrl !== undefined) {
       const img = document.createElement("img");
       img.className = "message-image";
       img.src = attachment.previewDataUrl;
       img.alt = attachment.fileName ?? "image attachment";
       bubble.append(img);
+    } else if (isAudio && attachment.previewDataUrl !== undefined) {
+      // Telegram voice messages and audio files both map to kind "file" (no separate "audio"
+      // kind in @chatter/core) — mimeType is what distinguishes "play inline" from a generic
+      // file chip. Receive-only: there's no attach-audio flow, per the request that added this.
+      const audio = document.createElement("audio");
+      audio.className = "message-audio";
+      audio.controls = true;
+      audio.src = attachment.previewDataUrl;
+      bubble.append(audio);
     } else {
       const chip = document.createElement("div");
       chip.className = "file-chip";
