@@ -41,6 +41,13 @@ doesn't fit, they must propose an alternative and log it below **before** using 
   (reduces custom work for FR-016 compliance). Preferred over Telegraf's middleware-chain
   abstraction (impedance mismatch with Chatter's own adapter contract) and over a raw
   fetch-based Bot API client (would mean reimplementing typed responses and retry handling).
+- API documentation: Bruno (https://www.usebruno.com/) — OpenCollection YAML format (Bruno's
+  current recommendation for new collections over legacy `.bru`), plain text and git-friendly.
+  Required for every HTTP-facing endpoint a ticket adds or changes: a provider adapter's
+  outbound calls to the provider's API, and any inbound webhook endpoint. Collections live at
+  `bruno/<provider>-adapter/`, one per provider adapter; see `bruno/README.md` for the layout
+  and secret-handling convention (secret-flagged variables, blank in the committed environment
+  file — never a real token/secret in git).
 - Tier 1 security (every PR, automated): Semgrep + gitleaks
 - Tier 2 security (major releases, manual trigger only): Shannon
   (https://github.com/KeygraphHQ/shannon) — whitebox, requires source access, ~$40-55/run in

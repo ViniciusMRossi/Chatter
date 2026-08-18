@@ -41,6 +41,17 @@ not after.
 
 Check `Docs/Privacy-Compliance.md` before implementing anything that touches personal data.
 
+## API documentation
+
+Any ticket that adds or changes an HTTP-facing endpoint — a provider adapter's outbound calls
+to the provider's API, or an inbound webhook endpoint — MUST add or update the corresponding
+Bruno collection under `bruno/<provider>-adapter/` in the *same PR*. This is not optional
+cleanup or a follow-up; treat it the same as updating the package's own README when its API
+surface changes. See `bruno/README.md` for the collection format and conventions, and
+`bruno/telegram-adapter/` for a worked example. Never commit a real token, secret, or credential
+into a collection file — declare it `secret: true` with a blank value in the environment file;
+Bruno stores what a developer fills in locally outside the synced collection.
+
 ## Security
 
 - Tier 1 (automated, every PR): Semgrep + secrets scan run in CI. Fix flagged issues before
