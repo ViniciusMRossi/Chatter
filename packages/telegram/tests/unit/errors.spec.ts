@@ -85,4 +85,36 @@ describe("Telegram error mapping", () => {
       retryAfterMs: 5000,
     });
   });
+
+  it("surfaces the new chat ID when Telegram signals a group->supergroup migration", async () => {
+    const transport = new StubTelegramTransport();
+    transport.queueError("sendMessage", {
+      ok: false,
+      error_code: 400,
+      description: "Bad Request: group chat was upgraded to a supergroup chat",
+      parameters: { migrate_to_chat_id: -1001234567890 },
+    });
+    const adapter = buildAdapter(transport);
+
+    const failure = adapter.send({ conversation: DIRECT_CONVERSATION, text: "hello" });
+    await expect(failure).rejects.toBeInstanceOf(ChatterInvalidTargetError);
+    await expect(failure.catch((error: unknown) => error)).resolves.toMatchObject({
+      message: expect.stringContaining("-1001234567890") as string,
+    });
+  });
+
+  it("never mentions migration for a failure with no migration signal", async () => {
+    const transport = new StubTelegramTransport();
+    transport.queueError("sendMessage", {
+      ok: false,
+      error_code: 400,
+      description: "Bad Request: chat not found",
+    });
+    const adapter = buildAdapter(transport);
+
+    const failure = adapter.send({ conversation: DIRECT_CONVERSATION, text: "hello" });
+    await expect(failure.catch((error: unknown) => error)).resolves.toMatchObject({
+      message: expect.not.stringContaining("migrat") as string,
+    });
+  });
 });

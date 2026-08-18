@@ -25,10 +25,17 @@ export function createTelegramWebhookHandler(
       return new Response(null, { status: 400 });
     }
 
+    if (adapter.hasProcessedUpdate(update.update_id)) {
+      // Telegram redelivered an update we've already dispatched — acknowledge it (so
+      // Telegram doesn't keep retrying) without dispatching it again.
+      return new Response(null, { status: 200 });
+    }
+
     const message = update.message;
     if (message?.text !== undefined && adapter.botUserId !== undefined) {
       adapter.dispatchInbound(mapMessage(message as TelegramTextMessage, adapter.botUserId));
     }
+    adapter.recordProcessedUpdate(update.update_id);
 
     return new Response(null, { status: 200 });
   };

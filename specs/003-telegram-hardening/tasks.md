@@ -32,10 +32,10 @@ package this ticket.
 depend on this phase and could technically start in parallel, but are sequenced after it here
 for a single linear implementation pass.
 
-- [ ] T001 [P] Implement `UpdateDedupWindow` (bounded `Map`-based FIFO set, capacity 1000,
+- [X] T001 [P] Implement `UpdateDedupWindow` (bounded `Map`-based FIFO set, capacity 1000,
       `has(updateId)`/`record(updateId)`) in
       `packages/telegram/src/dedup/update-dedup-window.ts`, per data-model.md.
-- [ ] T002 [P] Write unit tests for `UpdateDedupWindow`: membership after `record()`, no-op on
+- [X] T002 [P] Write unit tests for `UpdateDedupWindow`: membership after `record()`, no-op on
       re-recording an existing ID, oldest entry evicted once capacity is exceeded, in
       `packages/telegram/tests/unit/update-dedup-window.spec.ts`.
 
@@ -53,22 +53,22 @@ assert the application handler fires exactly once.
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T003 [P] [US1] Write failing integration test: the same `update_id` delivered twice via
+- [X] T003 [P] [US1] Write failing integration test: the same `update_id` delivered twice via
       the webhook handler results in exactly one dispatched inbound message (second delivery
       still returns HTTP 200), in `packages/telegram/tests/integration/duplicate-delivery.spec.ts`.
-- [ ] T004 [P] [US1] Write failing test (same file): a distinct, unseen `update_id` delivered
+- [X] T004 [P] [US1] Write failing test (same file): a distinct, unseen `update_id` delivered
       after several prior distinct updates is still dispatched normally.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Add `hasProcessedUpdate(updateId)` / `recordProcessedUpdate(updateId)` to
+- [X] T005 [US1] Add `hasProcessedUpdate(updateId)` / `recordProcessedUpdate(updateId)` to
       `TelegramAccountAdapter`, backed by a `UpdateDedupWindow` instance, in
       `packages/telegram/src/adapter/telegram-account-adapter.ts`. Depends on: T001.
-- [ ] T006 [US1] Wire `createTelegramWebhookHandler()` to check `hasProcessedUpdate()` before
+- [X] T006 [US1] Wire `createTelegramWebhookHandler()` to check `hasProcessedUpdate()` before
       dispatch and call `recordProcessedUpdate()` after a successful dispatch — always
       returning HTTP 200 either way (Telegram must not be told to retry) — in
       `packages/telegram/src/webhook/telegram-webhook-handler.ts`. Depends on: T005.
-- [ ] T007 [US1] Run `pnpm -r test` and confirm T003 and T004 now pass.
+- [X] T007 [US1] Run `pnpm -r test` and confirm T003 and T004 now pass.
 
 **Checkpoint**: User Story 1 fully functional and independently testable — this is the MVP for
 this ticket.
@@ -85,15 +85,15 @@ confirm the new chat ID is discoverable from the resulting failure.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T008 [P] [US2] Write failing unit test: a synthetic `GrammyError` with
+- [X] T008 [P] [US2] Write failing unit test: a synthetic `GrammyError` with
       `parameters.migrate_to_chat_id` set maps to a `ChatterInvalidTargetError` whose message
       contains the new chat ID, in `packages/telegram/tests/unit/errors.spec.ts`.
-- [ ] T009 [P] [US2] Write failing unit test (same file): a failure with no migration signal
+- [X] T009 [P] [US2] Write failing unit test (same file): a failure with no migration signal
       produces an error message that never mentions migration or a chat ID substitution.
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Extend `mapTelegramError` to check `error.parameters?.migrate_to_chat_id` and
+- [X] T010 [US2] Extend `mapTelegramError` to check `error.parameters?.migrate_to_chat_id` and
       include it in the `ChatterInvalidTargetError` message per research.md's wording, in
       `packages/telegram/src/errors/map-telegram-error.ts`. Run `pnpm -r test` and confirm T008
       and T009 pass.
@@ -112,15 +112,15 @@ recorded by the stub transport.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T011 [P] [US3] Write failing unit test: `send()` with text over 4096 characters rejects
+- [X] T011 [P] [US3] Write failing unit test: `send()` with text over 4096 characters rejects
       with `ChatterConfigurationError`, and the stub transport records zero calls, in
       `packages/telegram/tests/unit/send-validation.spec.ts`.
-- [ ] T012 [P] [US3] Write failing unit test (same file): `send()` with text at exactly 4096
+- [X] T012 [P] [US3] Write failing unit test (same file): `send()` with text at exactly 4096
       characters succeeds normally (the limit is inclusive).
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Add the length pre-validation to `TelegramAccountAdapter.send()`, before any
+- [X] T013 [US3] Add the length pre-validation to `TelegramAccountAdapter.send()`, before any
       API call, in `packages/telegram/src/adapter/telegram-account-adapter.ts`. Run
       `pnpm -r test` and confirm T011 and T012 pass.
 
@@ -138,15 +138,15 @@ injected callback and confirm both that `stop()` resolves and the callback fired
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T014 [P] [US4] Write failing unit test: `stop()` with a queued `deleteWebhook` failure
+- [X] T014 [P] [US4] Write failing unit test: `stop()` with a queued `deleteWebhook` failure
       still resolves without throwing, and an injected `onNonFatalError` spy is called, in
       `packages/telegram/tests/unit/stop-cleanup.spec.ts`.
-- [ ] T015 [P] [US4] Write failing unit test (same file): the message passed to
+- [X] T015 [P] [US4] Write failing unit test (same file): the message passed to
       `onNonFatalError` never contains the adapter's configured bot token or webhook secret.
 
 ### Implementation for User Story 4
 
-- [ ] T016 [US4] Add `onNonFatalError?: (message: string) => void` to
+- [X] T016 [US4] Add `onNonFatalError?: (message: string) => void` to
       `TelegramAccountAdapterOptions` (default: `console.error`); on a `deleteWebhook` failure
       in `stop()`, route it through the existing `mapTelegramError` sanitization and call
       `onNonFatalError` with the mapped error's message, in
@@ -166,7 +166,7 @@ produces an actionable failure.
 
 ### Implementation for User Story 5
 
-- [ ] T017 [US5] Write `packages/telegram/MANUAL-VERIFICATION.md`: a checklist covering webhook
+- [X] T017 [US5] Write `packages/telegram/MANUAL-VERIFICATION.md`: a checklist covering webhook
       registration against Telegram's real servers, a direct-chat round trip, and a group-chat
       round trip, per FR-008 — reusing `example-apps/telegram-echo` from ticket #2 as the app
       under test.
@@ -177,12 +177,12 @@ produces an actionable failure.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T018 [P] Update `packages/telegram/README.md`: document the dedup window's bound and
+- [X] T018 [P] Update `packages/telegram/README.md`: document the dedup window's bound and
       non-durability, migration-ID surfacing, the 4096-character limit, the `onNonFatalError`
       option, and link to `MANUAL-VERIFICATION.md`.
-- [ ] T019 [P] Re-run `@chatter/testing`'s `runAccountConformanceSuite` (via the existing,
+- [X] T019 [P] Re-run `@chatter/testing`'s `runAccountConformanceSuite` (via the existing,
       unmodified `packages/telegram/tests/conformance.spec.ts`) to confirm no regression (SC-005).
-- [ ] T020 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
+- [X] T020 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
       pass before opening the pull request.
 
 ---

@@ -24,7 +24,14 @@ export function mapTelegramError(error: unknown): ChatterError {
     // Bot-API-language text and structured data — never the request URL or token — so it's
     // safe to attach as `cause`.
     const { error_code: errorCode, description } = error;
+    const migrateToChatId = error.parameters.migrate_to_chat_id;
 
+    if (migrateToChatId !== undefined) {
+      return new ChatterInvalidTargetError(
+        `Telegram target invalid: chat migrated to supergroup, new chat ID: ${String(migrateToChatId)}`,
+        { cause: error },
+      );
+    }
     if (errorCode === 401) {
       return new ChatterAuthenticationError(`Telegram authentication failed: ${description}`, {
         cause: error,
