@@ -1,5 +1,11 @@
+interface ConversationSummary {
+  key: string;
+  label: string;
+}
+
 interface MessageView {
   id: string;
+  conversationKey: string;
   direction: "inbound" | "outbound";
   sender: string;
   timestamp: number;
@@ -20,8 +26,9 @@ interface StatusView {
 interface ChatterAPI {
   onMessage: (callback: (message: MessageView) => void) => void;
   onStatus: (callback: (status: StatusView) => void) => void;
-  sendText: (text: string) => Promise<void>;
-  pickAttachment: (caption: string) => Promise<void>;
+  onConversations: (callback: (conversations: ConversationSummary[]) => void) => void;
+  sendText: (conversationKey: string, text: string) => Promise<void>;
+  pickAttachment: (conversationKey: string, caption: string) => Promise<void>;
   openAttachment: (messageId: string) => Promise<void>;
 }
 
@@ -36,9 +43,16 @@ interface Window {
 
 const messagesEl = document.getElementById("messages");
 const statusEl = document.getElementById("status");
+const conversationListEl = document.getElementById("conversation-list");
+const conversationTitleEl = document.getElementById("conversation-title");
 const textInput = document.getElementById("text-input") as HTMLInputElement | null;
-const sendButton = document.getElementById("send-button");
-const attachButton = document.getElementById("attach-button");
+const sendButton = document.getElementById("send-button") as HTMLButtonElement | null;
+const attachButton = document.getElementById("attach-button") as HTMLButtonElement | null;
+
+const conversations: ConversationSummary[] = [];
+const messagesByConversation = new Map<string, MessageView[]>();
+const unreadConversationKeys = new Set<string>();
+let selectedConversationKey: string | undefined;
 
 function formatSize(bytes: number | undefined): string {
   if (bytes === undefined) {
@@ -60,7 +74,44 @@ function fileIconFor(kind: "image" | "video" | "file"): string {
   return "📄";
 }
 
-function renderMessage(message: MessageView): void {
+function setComposerEnabled(enabled: boolean): void {
+  if (textInput !== null) {
+    textInput.disabled = !enabled;
+  }
+  if (sendButton !== null) {
+    sendButton.disabled = !enabled;
+  }
+  if (attachButton !== null) {
+    attachButton.disabled = !enabled;
+  }
+}
+
+function renderConversationList(): void {
+  if (conversationListEl === null) {
+    return;
+  }
+  conversationListEl.replaceChildren(
+    ...conversations.map((conversation) => {
+      const item = document.createElement("li");
+      item.className = "conversation-item";
+      item.classList.toggle("selected", conversation.key === selectedConversationKey);
+      item.classList.toggle("has-unread", unreadConversationKeys.has(conversation.key));
+
+      const dot = document.createElement("span");
+      dot.className = "unread-dot";
+      const label = document.createElement("span");
+      label.textContent = conversation.label;
+      item.append(dot, label);
+
+      item.addEventListener("click", () => {
+        selectConversation(conversation.key);
+      });
+      return item;
+    }),
+  );
+}
+
+function renderMessageBubble(message: MessageView): void {
   if (messagesEl === null) {
     return;
   }
@@ -126,6 +177,46 @@ function renderMessage(message: MessageView): void {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+function selectConversation(key: string): void {
+  selectedConversationKey = key;
+  unreadConversationKeys.delete(key);
+  if (conversationTitleEl !== null) {
+    conversationTitleEl.textContent = conversations.find((c) => c.key === key)?.label ?? key;
+  }
+  messagesEl?.replaceChildren();
+  for (const message of messagesByConversation.get(key) ?? []) {
+    renderMessageBubble(message);
+  }
+  setComposerEnabled(true);
+  renderConversationList();
+}
+
+function handleConversations(updated: ConversationSummary[]): void {
+  conversations.length = 0;
+  conversations.push(...updated);
+  if (selectedConversationKey === undefined && conversations.length > 0) {
+    const first = conversations[0];
+    if (first !== undefined) {
+      selectConversation(first.key);
+      return;
+    }
+  }
+  renderConversationList();
+}
+
+function handleMessage(message: MessageView): void {
+  const bucket = messagesByConversation.get(message.conversationKey) ?? [];
+  bucket.push(message);
+  messagesByConversation.set(message.conversationKey, bucket);
+
+  if (message.conversationKey === selectedConversationKey) {
+    renderMessageBubble(message);
+  } else if (message.direction === "inbound") {
+    unreadConversationKeys.add(message.conversationKey);
+    renderConversationList();
+  }
+}
+
 function setStatus(status: StatusView): void {
   if (statusEl === null) {
     return;
@@ -135,12 +226,12 @@ function setStatus(status: StatusView): void {
 }
 
 function sendCurrentText(): void {
-  if (textInput === null || textInput.value.trim().length === 0) {
+  if (selectedConversationKey === undefined || textInput === null || textInput.value.trim().length === 0) {
     return;
   }
   const text = textInput.value.trim();
   textInput.value = "";
-  window.chatterAPI?.sendText(text).catch((error: unknown) => {
+  window.chatterAPI?.sendText(selectedConversationKey, text).catch((error: unknown) => {
     setStatus({ text: `Failed to send: ${String(error)}`, level: "error" });
   });
 }
@@ -153,11 +244,14 @@ textInput?.addEventListener("keydown", (event) => {
 });
 
 attachButton?.addEventListener("click", () => {
+  if (selectedConversationKey === undefined) {
+    return;
+  }
   const caption = textInput?.value.trim() ?? "";
   if (textInput !== null) {
     textInput.value = "";
   }
-  window.chatterAPI?.pickAttachment(caption).catch((error: unknown) => {
+  window.chatterAPI?.pickAttachment(selectedConversationKey, caption).catch((error: unknown) => {
     setStatus({ text: `Failed to send attachment: ${String(error)}`, level: "error" });
   });
 });
@@ -166,6 +260,7 @@ if (window.chatterAPI === undefined) {
   console.error("window.chatterAPI is undefined — the preload script did not run/expose it.");
   setStatus({ text: "Internal error: preload script did not load (see DevTools console).", level: "error" });
 } else {
-  window.chatterAPI.onMessage(renderMessage);
+  window.chatterAPI.onMessage(handleMessage);
   window.chatterAPI.onStatus(setStatus);
+  window.chatterAPI.onConversations(handleConversations);
 }

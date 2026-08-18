@@ -4,12 +4,88 @@
 
 body {
   margin: 0;
-  display: flex;
-  flex-direction: column;
   height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #f8f8f8;
   color: #1d1c1d;
+}
+
+#app {
+  display: flex;
+  height: 100vh;
+}
+
+#sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #3f0e40;
+  color: #d1c6d3;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+#sidebar-header {
+  padding: 16px 16px 12px;
+  font-weight: 700;
+  color: white;
+  font-size: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#conversation-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.conversation-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.conversation-item.selected {
+  background: #1164a3;
+  color: white;
+}
+
+.conversation-item .unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e01e5a;
+  flex-shrink: 0;
+  visibility: hidden;
+}
+
+.conversation-item.has-unread .unread-dot {
+  visibility: visible;
+}
+
+#conversation-list:empty::after {
+  content: "Waiting for the first message…";
+  display: block;
+  padding: 7px 16px;
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+#main-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 #header {

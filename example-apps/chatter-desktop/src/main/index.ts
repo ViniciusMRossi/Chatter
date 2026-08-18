@@ -10,7 +10,13 @@ import {
   mimeTypeFromFileName,
   writeToTempFile,
 } from "./attachment-utils.js";
-import { IPC_CHANNELS, type MessageView, type StatusView } from "./ipc-types.js";
+import {
+  IPC_CHANNELS,
+  type ConversationKeyString,
+  type ConversationSummary,
+  type MessageView,
+  type StatusView,
+} from "./ipc-types.js";
 
 // @chatter/core and @chatter/telegram are ESM-only; this app is CommonJS (simplest, most
 // compatible choice for Electron's preload/main ecosystem — see README). Dynamic import()
@@ -21,6 +27,7 @@ async function loadChatter(): Promise<{
   createTelegramWebhookHandler: (
     adapter: TelegramAccountAdapterType,
   ) => (request: Request) => Promise<Response>;
+  conversationKey: (provider: string, providerAccountId: string, providerConversationId: string) => string;
 }> {
   const core = await import("@chatter/core");
   const telegram = await import("@chatter/telegram");
@@ -28,14 +35,27 @@ async function loadChatter(): Promise<{
     Chatter: core.Chatter,
     TelegramAccountAdapter: telegram.TelegramAccountAdapter,
     createTelegramWebhookHandler: telegram.createTelegramWebhookHandler,
+    conversationKey: core.conversationKey,
   };
 }
 
 let mainWindow: BrowserWindow | undefined;
 let chatter: ChatterType | undefined;
 let httpServer: ReturnType<typeof createServer> | undefined;
-let activeConversation: Conversation | undefined;
 let messageCounter = 0;
+
+/**
+ * The renderer only ever sees the string key + a display label (ConversationSummary) — never
+ * the real Conversation object. Sending resolves the key back to this map's authoritative
+ * entry, so the renderer can never spoof/construct a send target it wasn't handed.
+ */
+const conversations = new Map<ConversationKeyString, { conversation: Conversation; label: string }>();
+
+/** Set once loadChatter() resolves — @chatter/core's own key-composition helper, reused here
+ *  so the desktop app's notion of "which conversation is this" matches the library's. */
+let composeConversationKey:
+  | ((provider: string, providerAccountId: string, providerConversationId: string) => string)
+  | undefined;
 
 /** Real Attachment objects (with the real download URL), keyed by message id — never sent to
  *  the renderer directly. See attachment-utils.ts's fetchAttachmentBytes() doc comment. */
@@ -50,7 +70,46 @@ function sendStatus(text: string, level: StatusView["level"] = "info"): void {
   sendToRenderer(IPC_CHANNELS.status, { text, level } satisfies StatusView);
 }
 
+function sendConversationList(): void {
+  const summaries: ConversationSummary[] = Array.from(conversations.entries()).map(
+    ([key, entry]) => ({ key, label: entry.label }),
+  );
+  sendToRenderer(IPC_CHANNELS.conversations, summaries);
+}
+
+/**
+ * Registers a conversation the first time it's seen (keyed the same way @chatter/core keys
+ * conversations internally) and returns its key. The sidebar label is deliberately simple —
+ * the sender's display name of whoever first messaged in it — since Conversation itself
+ * carries no human-readable title (Chatter's normalized model doesn't have one; a group
+ * chat's Telegram "title" never reaches this layer). Good enough for a manual test client.
+ */
+function ensureConversation(conversation: Conversation, label: string): ConversationKeyString {
+  if (composeConversationKey === undefined) {
+    throw new Error("Chatter is not started yet");
+  }
+  const key = composeConversationKey(
+    conversation.provider,
+    conversation.providerAccountId,
+    conversation.providerConversationId,
+  );
+  if (!conversations.has(key)) {
+    conversations.set(key, { conversation, label });
+    sendConversationList();
+  }
+  return key;
+}
+
+function resolveConversation(key: ConversationKeyString): Conversation {
+  const entry = conversations.get(key);
+  if (entry === undefined) {
+    throw new Error(`Unknown conversation: ${key}`);
+  }
+  return entry.conversation;
+}
+
 async function buildMessageView(
+  conversationKey: ConversationKeyString,
   direction: MessageView["direction"],
   sender: string,
   text: string | undefined,
@@ -78,6 +137,7 @@ async function buildMessageView(
 
   return {
     id,
+    conversationKey,
     direction,
     sender,
     timestamp: Date.now(),
@@ -96,14 +156,10 @@ async function buildMessageView(
 }
 
 async function handleInbound(event: MessageCreatedEvent): Promise<void> {
-  activeConversation = event.message.conversation;
+  const sender = event.message.sender.displayName ?? "Unknown";
+  const key = ensureConversation(event.message.conversation, sender);
   const attachment = event.message.attachments?.[0];
-  const view = await buildMessageView(
-    "inbound",
-    event.message.sender.displayName ?? "Unknown",
-    event.message.text,
-    attachment,
-  );
+  const view = await buildMessageView(key, "inbound", sender, event.message.text, attachment);
   sendToRenderer(IPC_CHANNELS.message, view);
 }
 
@@ -112,13 +168,6 @@ function requireChatter(): ChatterType {
     throw new Error("Chatter is not started yet");
   }
   return chatter;
-}
-
-function requireActiveConversation(): Conversation {
-  if (activeConversation === undefined) {
-    throw new Error("No conversation yet — wait for a message from Telegram first");
-  }
-  return activeConversation;
 }
 
 async function startChatter(): Promise<void> {
@@ -138,7 +187,9 @@ async function startChatter(): Promise<void> {
   // into the separately-declared `handleRequest` closure below.
   const registeredWebhookUrl: string = webhookUrl;
 
-  const { Chatter, TelegramAccountAdapter, createTelegramWebhookHandler } = await loadChatter();
+  const { Chatter, TelegramAccountAdapter, createTelegramWebhookHandler, conversationKey } =
+    await loadChatter();
+  composeConversationKey = conversationKey;
 
   const adapter = new TelegramAccountAdapter({ botToken, webhookSecret, webhookUrl });
   chatter = new Chatter({ accounts: [{ accountName: "chatter-desktop", adapter }] });
@@ -188,53 +239,60 @@ async function startChatter(): Promise<void> {
 }
 
 function registerIpcHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.sendText, async (_event, text: string) => {
-    const conversation = requireActiveConversation();
-    await requireChatter().send({ account: "chatter-desktop", conversation, text });
-    const view = await buildMessageView("outbound", "You", text, undefined);
-    sendToRenderer(IPC_CHANNELS.message, view);
-  });
+  ipcMain.handle(
+    IPC_CHANNELS.sendText,
+    async (_event, conversationKey: ConversationKeyString, text: string) => {
+      const conversation = resolveConversation(conversationKey);
+      await requireChatter().send({ account: "chatter-desktop", conversation, text });
+      const view = await buildMessageView(conversationKey, "outbound", "You", text, undefined);
+      sendToRenderer(IPC_CHANNELS.message, view);
+    },
+  );
 
-  ipcMain.handle(IPC_CHANNELS.pickAttachment, async (_event, caption: string) => {
-    if (mainWindow === undefined) {
-      return;
-    }
-    const conversation = requireActiveConversation();
-    const result = await dialog.showOpenDialog(mainWindow, { properties: ["openFile"] });
-    if (result.canceled || result.filePaths.length === 0) {
-      return;
-    }
-    const filePath = result.filePaths[0];
-    if (filePath === undefined) {
-      return;
-    }
-    const { readFile } = await import("node:fs/promises");
-    const data = await readFile(filePath);
-    const fileName = filePath.split("/").pop() ?? filePath;
-    const mimeType = mimeTypeFromFileName(fileName);
-    const kind = kindFromMimeType(mimeType);
-    const attachment: Attachment = {
-      kind,
-      source: { data },
-      fileName,
-      ...(mimeType !== undefined ? { mimeType } : {}),
-      sizeBytes: data.byteLength,
-    };
+  ipcMain.handle(
+    IPC_CHANNELS.pickAttachment,
+    async (_event, conversationKey: ConversationKeyString, caption: string) => {
+      if (mainWindow === undefined) {
+        return;
+      }
+      const conversation = resolveConversation(conversationKey);
+      const result = await dialog.showOpenDialog(mainWindow, { properties: ["openFile"] });
+      if (result.canceled || result.filePaths.length === 0) {
+        return;
+      }
+      const filePath = result.filePaths[0];
+      if (filePath === undefined) {
+        return;
+      }
+      const { readFile } = await import("node:fs/promises");
+      const data = await readFile(filePath);
+      const fileName = filePath.split("/").pop() ?? filePath;
+      const mimeType = mimeTypeFromFileName(fileName);
+      const kind = kindFromMimeType(mimeType);
+      const attachment: Attachment = {
+        kind,
+        source: { data },
+        fileName,
+        ...(mimeType !== undefined ? { mimeType } : {}),
+        sizeBytes: data.byteLength,
+      };
 
-    await requireChatter().send({
-      account: "chatter-desktop",
-      conversation,
-      ...(caption.length > 0 ? { text: caption } : {}),
-      attachment,
-    });
-    const view = await buildMessageView(
-      "outbound",
-      "You",
-      caption.length > 0 ? caption : undefined,
-      attachment,
-    );
-    sendToRenderer(IPC_CHANNELS.message, view);
-  });
+      await requireChatter().send({
+        account: "chatter-desktop",
+        conversation,
+        ...(caption.length > 0 ? { text: caption } : {}),
+        attachment,
+      });
+      const view = await buildMessageView(
+        conversationKey,
+        "outbound",
+        "You",
+        caption.length > 0 ? caption : undefined,
+        attachment,
+      );
+      sendToRenderer(IPC_CHANNELS.message, view);
+    },
+  );
 
   ipcMain.handle(IPC_CHANNELS.openAttachment, async (_event, messageId: string) => {
     const attachment = attachmentsById.get(messageId);
