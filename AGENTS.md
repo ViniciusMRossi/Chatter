@@ -41,6 +41,26 @@ not after.
 
 Check `Docs/Privacy-Compliance.md` before implementing anything that touches personal data.
 
+## API documentation
+
+Any ticket that adds or changes an HTTP-facing endpoint — a provider adapter's outbound calls
+to the provider's API, or an inbound webhook endpoint — MUST add or update the corresponding
+Bruno collection under `bruno/<provider>-adapter/` in the *same PR*. This is not optional
+cleanup or a follow-up; treat it the same as updating the package's own README when its API
+surface changes. See `bruno/README.md` for the collection format and conventions, and
+`bruno/telegram-adapter/` for a worked example. Never commit a real token, secret, or credential
+into a collection file — declare it `secret: true` with a blank value in the environment file;
+Bruno stores what a developer fills in locally outside the synced collection.
+
+Every request MUST have a `tests` block — these collections are executable test suites, not
+just docs. For any endpoint that doesn't require a real provider credential (e.g. a webhook
+handler under your own control), wire the corresponding folder into CI via a `test:bruno`
+script in the owning package and a job in `.github/workflows/ci.yml`, following the pattern in
+`packages/telegram/tests/bruno/` — a throwaway stub-backed test server, zero real credentials,
+same as every other automated test in this project. Endpoints that call a real provider API
+still get `tests` blocks (useful as a local smoke test with real credentials), but are never
+wired into CI.
+
 ## Security
 
 - Tier 1 (automated, every PR): Semgrep + secrets scan run in CI. Fix flagged issues before

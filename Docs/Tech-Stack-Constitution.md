@@ -41,6 +41,19 @@ doesn't fit, they must propose an alternative and log it below **before** using 
   (reduces custom work for FR-016 compliance). Preferred over Telegraf's middleware-chain
   abstraction (impedance mismatch with Chatter's own adapter contract) and over a raw
   fetch-based Bot API client (would mean reimplementing typed responses and retry handling).
+- API documentation: Bruno (https://www.usebruno.com/) — OpenCollection YAML format (Bruno's
+  current recommendation for new collections over legacy `.bru`), plain text and git-friendly.
+  Required for every HTTP-facing endpoint a ticket adds or changes: a provider adapter's
+  outbound calls to the provider's API, and any inbound webhook endpoint. Collections live at
+  `bruno/<provider>-adapter/`, one per provider adapter; see `bruno/README.md` for the layout
+  and secret-handling convention (secret-flagged variables, blank in the committed environment
+  file — never a real token/secret in git).
+- API contract testing: every Bruno request carries a `tests` block (Bruno's own Chai-based
+  assertion runtime) and, for endpoints that don't need a real provider credential (e.g. a
+  webhook handler under our own control), runs automatically in CI via the Bruno CLI
+  (`@usebruno/cli`, devDependency of the owning package) against a throwaway stub-backed test
+  server — zero real credentials, same rule as every other automated test in this project. See
+  `packages/telegram/tests/bruno/` for the reference implementation.
 - Tier 1 security (every PR, automated): Semgrep + gitleaks
 - Tier 2 security (major releases, manual trigger only): Shannon
   (https://github.com/KeygraphHQ/shannon) — whitebox, requires source access, ~$40-55/run in

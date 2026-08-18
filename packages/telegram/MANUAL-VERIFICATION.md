@@ -9,6 +9,10 @@ an environment with no live Telegram credentials.
 Uses `example-apps/telegram-echo` from ticket #2 as the application under test — see that
 example's own `README.md` for setup details this checklist doesn't repeat.
 
+The [`bruno/telegram-adapter/`](../../bruno/telegram-adapter) collection has ready-made requests
+for several steps below (`Get Webhook Info`, `Send Message`, and synthetic webhook deliveries
+under `local-webhook/`) if you'd rather click a saved request than hand-craft `curl` calls.
+
 ## Prerequisites
 
 - [ ] A Telegram bot token from [@BotFather](https://t.me/BotFather) (see
@@ -23,9 +27,9 @@ example's own `README.md` for setup details this checklist doesn't repeat.
       example's README).
 - [ ] Confirm the process starts without throwing — `chatter.start()` calling `getMe()` then
       `setWebhook()` against Telegram's real servers should both succeed.
-- [ ] Optionally confirm via `https://api.telegram.org/bot<TOKEN>/getWebhookInfo` (in a browser
-      or `curl`) that `url` matches your configured webhook URL and `last_error_message` is
-      empty.
+- [ ] Optionally confirm via `https://api.telegram.org/bot<TOKEN>/getWebhookInfo` (in a browser,
+      `curl`, or the Bruno collection's `Get Webhook Info` request) that `url` matches your
+      configured webhook URL and `last_error_message` is empty.
 
 ## 2. Direct chat round trip
 

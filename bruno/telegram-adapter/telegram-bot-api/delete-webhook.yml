@@ -1,0 +1,25 @@
+info:
+  name: Delete Webhook
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{telegram_api_base}}/bot{{bot_token}}/deleteWebhook"
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("webhook removed", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.ok).to.equal(true);
+          expect(res.body.result).to.equal(true);
+        });
+
+docs: |-
+  Removes the registered webhook — what TelegramAccountAdapter.stop() does
+  automatically. A failure here is what T014-T016's onNonFatalError hardening
+  (packages/telegram/src/adapter/telegram-account-adapter.ts) surfaces rather
+  than silently discarding.

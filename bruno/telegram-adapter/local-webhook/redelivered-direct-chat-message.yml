@@ -1,0 +1,43 @@
+info:
+  name: Redelivered Direct Chat Message
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100001,
+        "message": {
+          "message_id": 1,
+          "date": 1700000000,
+          "chat": { "id": 555, "type": "private", "first_name": "Ada" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "text": "hello from Bruno"
+        }
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("still responds 200 (Telegram must not be told to retry)", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  The exact same update_id (100001) as "Direct Chat Message" — simulates Telegram
+  redelivering an update (e.g. after a slow response). Expect HTTP 200, same as
+  the original delivery, but no second dispatch — see "Check Received Count
+  After Direct" next, which proves that via the test server's introspection
+  endpoint. This is the User Story 1 dedup mechanism from
+  specs/003-telegram-hardening/spec.md.

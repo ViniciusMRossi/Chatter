@@ -1,0 +1,26 @@
+info:
+  name: Chatter — Telegram Adapter
+  type: collection
+  version: 1.0.0
+
+environments:
+  - name: Local
+    file: environments/Local.yml
+  - name: CI
+    file: environments/CI.yml
+
+docs: |-
+  Documents the HTTP endpoints @chatter/telegram actually touches:
+
+  - `telegram-bot-api/` — the outbound Telegram Bot API calls TelegramAccountAdapter
+    makes internally (getMe, setWebhook, deleteWebhook, sendMessage), plus
+    getWebhookInfo for manual inspection. Requires a real bot token. Not run in CI.
+  - `local-webhook/` — synthetic inbound webhook deliveries targeting your own
+    locally running webhook handler (e.g. example-apps/telegram-echo). Requires no
+    real Telegram bot or tunnel — these hit your own server directly. Runs
+    automatically in CI against a stub-backed test server (see
+    packages/telegram/tests/bruno/webhook-test-server.ts and the `CI` environment).
+
+  Every request has a `tests` block — this collection is both documentation and
+  an automated (for local-webhook/) or human-run (for telegram-bot-api/) test
+  suite. See bruno/README.md for setup instructions.

@@ -1,0 +1,7 @@
+# Bruno stores secret-flagged variable values outside this folder by default, but
+# guard against local overrides / OAuth token caches ever landing here anyway.
+.env
+.env.*
+!.env.example
+secrets/
+*.token.json

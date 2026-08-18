@@ -1,0 +1,25 @@
+info:
+  name: Check Received Count After Direct
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{local_received_count_url}}"
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("exactly one message was dispatched despite two deliveries", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.count).to.equal(1);
+        });
+
+docs: |-
+  Only meaningful against `tests/bruno/webhook-test-server.ts` (the CI test
+  server), which exposes this introspection endpoint — the production
+  example-apps/telegram-echo app does not, and this request will fail (harmlessly)
+  if pointed at it. Proves the two prior requests (original + redelivery of the
+  same update_id) resulted in exactly one dispatched message, not two.

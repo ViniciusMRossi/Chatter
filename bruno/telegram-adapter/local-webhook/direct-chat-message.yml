@@ -1,0 +1,42 @@
+info:
+  name: Direct Chat Message
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100001,
+        "message": {
+          "message_id": 1,
+          "date": 1700000000,
+          "chat": { "id": 555, "type": "private", "first_name": "Ada" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "text": "hello from Bruno"
+        }
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("responds 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  Simulates Telegram delivering a direct (private-chat) text message. Expect
+  HTTP 200 and, if your app is wired to reply, an echo back to chat 555 recorded
+  by whatever's listening at local_webhook_url. Conversation type should map to
+  "direct" (chat.type "private" — see packages/telegram/src/mapping/
+  conversation.ts).
