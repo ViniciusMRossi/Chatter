@@ -25,6 +25,14 @@ async function mapMessageAttachment(
   if (message.document !== undefined) {
     return mapAttachment(message.document, "file", api, botToken);
   }
+  if (message.voice !== undefined) {
+    // No "audio" Capability/kind — reuses "file" (mimeType, typically "audio/ogg", is what
+    // lets application code recognize it's playable audio; see packages/telegram/README.md).
+    return mapAttachment(message.voice, "file", api, botToken);
+  }
+  if (message.audio !== undefined) {
+    return mapAttachment(message.audio, "file", api, botToken);
+  }
   return undefined;
 }
 

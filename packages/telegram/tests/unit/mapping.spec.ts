@@ -96,4 +96,49 @@ describe("Telegram media -> Attachment mapping", () => {
     expect(getFileCall?.payload.file_id).toBe("large");
     expect(mapped.attachments?.[0]?.kind).toBe("image");
   });
+
+  it("maps a Voice message to a file attachment carrying its mime_type but no fileName", async () => {
+    const transport = new StubTelegramTransport();
+    const voice = { file_id: "voice-1", file_unique_id: "voice-1-u", duration: 3, mime_type: "audio/ogg" };
+
+    const attachment = await mapAttachment(voice, "file", transport.api, BOT_TOKEN);
+
+    expect(attachment.kind).toBe("file");
+    expect(attachment.mimeType).toBe("audio/ogg");
+    expect(attachment.fileName).toBeUndefined();
+  });
+
+  it("maps an Audio message to a file attachment carrying both mime_type and fileName", async () => {
+    const transport = new StubTelegramTransport();
+    const audio = {
+      file_id: "audio-1",
+      file_unique_id: "audio-1-u",
+      duration: 180,
+      mime_type: "audio/mpeg",
+      file_name: "song.mp3",
+    };
+
+    const attachment = await mapAttachment(audio, "file", transport.api, BOT_TOKEN);
+
+    expect(attachment.kind).toBe("file");
+    expect(attachment.mimeType).toBe("audio/mpeg");
+    expect(attachment.fileName).toBe("song.mp3");
+  });
+
+  it("mapMessage() dispatches a voice-only update (no caption) as an attachment-only message", async () => {
+    const transport = new StubTelegramTransport();
+    const message = {
+      message_id: 1,
+      date: Math.floor(Date.now() / 1000),
+      chat: { id: 555, type: "private" as const, first_name: "Ada" },
+      from: { id: 777, is_bot: false, first_name: "Ada" },
+      voice: { file_id: "voice-2", file_unique_id: "voice-2-u", duration: 4, mime_type: "audio/ogg" },
+    };
+
+    const mapped = await mapMessage(message, "987654321", transport.api, BOT_TOKEN);
+
+    expect(mapped.attachments?.[0]?.kind).toBe("file");
+    expect(mapped.attachments?.[0]?.mimeType).toBe("audio/ogg");
+    expect(mapped.text).toBeUndefined();
+  });
 });

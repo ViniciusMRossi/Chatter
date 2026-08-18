@@ -1,0 +1,41 @@
+info:
+  name: Voice Message
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100006,
+        "message": {
+          "message_id": 6,
+          "date": 1700000000,
+          "chat": { "id": 555, "type": "private", "first_name": "Ada" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "voice": { "file_id": "voice-1", "file_unique_id": "voice-1-u", "duration": 3, "mime_type": "audio/ogg" }
+        }
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("responds 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  Simulates Telegram delivering a voice message — proves the dispatch gate now
+  fires for voice/audio updates too (previously silently dropped, same class
+  of gap ticket #5 fixed for photo/video/document). Receive-only: this
+  adapter has no way to send a voice message (sendVoice isn't wired up).

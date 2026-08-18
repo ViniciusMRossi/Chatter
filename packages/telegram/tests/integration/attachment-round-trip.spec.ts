@@ -122,6 +122,50 @@ describe("inbound attachment round trip", () => {
     expect(received).toHaveLength(1);
     expect(received[0]?.attachments?.[0]?.kind).toBe("file");
   });
+
+  it("dispatches a voice message (previously silently dropped) as a file attachment", async () => {
+    const { handler, received } = await setUp();
+
+    await postUpdate(handler, {
+      update_id: 5,
+      message: {
+        message_id: 14,
+        date: Math.floor(Date.now() / 1000),
+        chat: { id: 555, type: "private", first_name: "Ada" },
+        from: { id: 777, is_bot: false, first_name: "Ada" },
+        voice: { file_id: "voice-1", file_unique_id: "voice-1-u", duration: 3, mime_type: "audio/ogg" },
+      },
+    });
+
+    expect(received).toHaveLength(1);
+    expect(received[0]?.attachments?.[0]?.kind).toBe("file");
+    expect(received[0]?.attachments?.[0]?.mimeType).toBe("audio/ogg");
+  });
+
+  it("dispatches an audio (music file) message as a file attachment", async () => {
+    const { handler, received } = await setUp();
+
+    await postUpdate(handler, {
+      update_id: 6,
+      message: {
+        message_id: 15,
+        date: Math.floor(Date.now() / 1000),
+        chat: { id: 555, type: "private", first_name: "Ada" },
+        from: { id: 777, is_bot: false, first_name: "Ada" },
+        audio: {
+          file_id: "audio-1",
+          file_unique_id: "audio-1-u",
+          duration: 180,
+          mime_type: "audio/mpeg",
+          file_name: "song.mp3",
+        },
+      },
+    });
+
+    expect(received).toHaveLength(1);
+    expect(received[0]?.attachments?.[0]?.kind).toBe("file");
+    expect(received[0]?.attachments?.[0]?.fileName).toBe("song.mp3");
+  });
 });
 
 describe("outbound attachment sends", () => {
