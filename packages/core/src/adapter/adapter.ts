@@ -1,3 +1,4 @@
+import type { Attachment } from "../types/attachment.js";
 import type { Capability } from "../types/capability.js";
 import type { Conversation } from "../types/conversation.js";
 import type { DeliveryResult } from "../types/delivery-result.js";
@@ -5,7 +6,8 @@ import type { Message } from "../types/message.js";
 
 export interface SendInput {
   readonly conversation: Conversation;
-  readonly text: string;
+  readonly text?: string;
+  readonly attachment?: Attachment;
   readonly replyToMessageId?: string;
 }
 

@@ -1,4 +1,5 @@
 import {
+  ChatterConfigurationError,
   ChatterInvalidTargetError,
   ChatterRateLimitError,
   ChatterUnsupportedCapabilityError,
@@ -14,6 +15,8 @@ const DEFAULT_CAPABILITIES: Capability[] = ["text", "reply", "thread"];
 
 export interface FakeAccountAdapterConfig {
   readonly capabilities?: Capability[];
+  /** Enforced only against `{ data: Buffer }`-sourced attachments; unset means no size check. */
+  readonly maxAttachmentSizeBytes?: number;
 }
 
 interface PendingRateLimit {
@@ -28,11 +31,13 @@ export class FakeAccountAdapter implements AccountAdapter {
   #dispatch: ((message: InboundMessage) => void) | undefined;
   #knownConversationIds = new Set<string>();
   #knownMessageIds = new Set<string>();
+  #maxAttachmentSizeBytes: number | undefined;
   #pendingRateLimit: PendingRateLimit | undefined;
   #sentCounter = 0;
 
   constructor(config?: FakeAccountAdapterConfig) {
     this.#capabilities = new Set(config?.capabilities ?? DEFAULT_CAPABILITIES);
+    this.#maxAttachmentSizeBytes = config?.maxAttachmentSizeBytes;
   }
 
   getCapabilities(): ReadonlySet<Capability> {
@@ -82,6 +87,19 @@ export class FakeAccountAdapter implements AccountAdapter {
     }
     if (input.conversation.providerThreadId && !this.#capabilities.has("thread")) {
       throw new ChatterUnsupportedCapabilityError("this fake account does not support threads");
+    }
+    if (input.attachment && !this.#capabilities.has("attachments")) {
+      throw new ChatterUnsupportedCapabilityError("this fake account does not support attachments");
+    }
+    if (
+      input.attachment &&
+      "data" in input.attachment.source &&
+      this.#maxAttachmentSizeBytes !== undefined &&
+      input.attachment.source.data.byteLength > this.#maxAttachmentSizeBytes
+    ) {
+      throw new ChatterConfigurationError(
+        `attachment exceeds the ${String(this.#maxAttachmentSizeBytes)}-byte limit (got ${String(input.attachment.source.data.byteLength)} bytes)`,
+      );
     }
 
     const key = conversationKey(

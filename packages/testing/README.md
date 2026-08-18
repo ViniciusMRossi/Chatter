@@ -43,6 +43,12 @@ fake.emitInbound({
 `emitInbound`, `sentMessages`, and `simulateRateLimit` are fake-adapter-only test ergonomics —
 not part of the `AccountAdapter` contract, so they're not assumed by the conformance suite.
 
+`FakeAccountAdapter` also accepts `maxAttachmentSizeBytes` in its config — when set, `send()`
+rejects a `{ data: Buffer }`-sourced attachment whose byte length exceeds it with
+`ChatterConfigurationError`, before recording anything in `sentMessages`. Unset means no size
+check. A `send()` carrying `attachment` also requires the `"attachments"` capability, exactly
+like `"reply"`/`"thread"` already require their own capabilities.
+
 ## `runAccountConformanceSuite`
 
 Takes a config object rather than a bare adapter factory, because a generic suite has no way to
@@ -70,8 +76,15 @@ runAccountConformanceSuite({
     providerConversationId: "never-seen",
     type: "direct",
   }),
+  getTestAttachment: () => ({ kind: "file", source: { data: Buffer.from("test") } }),
 });
 ```
 
 A future real adapter's own test file would supply the same shape of config, using a real (or
 sandboxed) provider conversation for `getKnownConversation` — the suite itself never changes.
+
+`getTestAttachment` (required) supplies a small, valid `Attachment` the suite uses to prove both
+that a send with an attachment succeeds when the adapter declares `"attachments"`, and that it
+rejects with `ChatterUnsupportedCapabilityError` when it doesn't — whichever is relevant to the
+capability set the adapter instance under test was constructed with; the other check is a no-op
+for that instance.

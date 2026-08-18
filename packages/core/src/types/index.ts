@@ -1,4 +1,5 @@
 export * from "./ids.js";
+export * from "./attachment.js";
 export * from "./capability.js";
 export * from "./provider.js";
 export * from "./account.js";

@@ -106,7 +106,8 @@ export class Chatter {
 
     const sendInput: SendInput = {
       conversation: input.conversation,
-      text: input.text,
+      ...(input.text !== undefined ? { text: input.text } : {}),
+      ...(input.attachment !== undefined ? { attachment: input.attachment } : {}),
       ...(input.replyToMessageId !== undefined ? { replyToMessageId: input.replyToMessageId } : {}),
     };
     const result = await adapter.send(sendInput);

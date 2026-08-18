@@ -35,18 +35,18 @@ ticket builds on (see research.md's "text becomes optional" decision).
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T001 [P] Create `AttachmentKind`, `AttachmentSource`, and `Attachment` in
+- [X] T001 [P] Create `AttachmentKind`, `AttachmentSource`, and `Attachment` in
       `packages/core/src/types/attachment.ts`, per data-model.md.
-- [ ] T002 [P] Add `"attachments"` to the `Capability` union in
+- [X] T002 [P] Add `"attachments"` to the `Capability` union in
       `packages/core/src/types/capability.ts`.
-- [ ] T003 Change `text: string` to `text?: string` on `Message` in
+- [X] T003 Change `text: string` to `text?: string` on `Message` in
       `packages/core/src/types/message.ts`, and on `SendInput` in
       `packages/core/src/adapter/adapter.ts`; then fix the resulting compile break in
       `packages/telegram/src/adapter/telegram-account-adapter.ts` (the 4096-character length
       check on `input.text` must guard for `undefined` and skip the check when there's no text —
       no other change to that file; this is a mechanical fix, not attachment support in
       Telegram). Run `pnpm -r typecheck` and confirm the whole monorepo compiles again.
-- [ ] T004 Export `Attachment`, `AttachmentKind`, `AttachmentSource` from
+- [X] T004 Export `Attachment`, `AttachmentKind`, `AttachmentSource` from
       `packages/core/src/types/index.ts`. Depends on: T001.
 
 **Checkpoint**: `Attachment` type exists and is exported; `Message`/`SendInput` can represent
@@ -65,20 +65,20 @@ receives the attachments unchanged.
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T005 [P] [US1] Write unit test: a `Message` literal can be constructed with both `text` and
+- [X] T005 [P] [US1] Write unit test: a `Message` literal can be constructed with both `text` and
       `attachments`, with `attachments` only (no `text`), and with `text` only (no
       `attachments`) — all three compile and hold the expected values, in
       `packages/core/tests/unit/attachment.spec.ts`.
-- [ ] T006 [P] [US1] Write unit test (same file): an `Attachment` is valid with only `kind` and
+- [X] T006 [P] [US1] Write unit test (same file): an `Attachment` is valid with only `kind` and
       `source` set — `fileName`/`mimeType`/`sizeBytes` all omitted (FR-002 edge case).
-- [ ] T007 [P] [US1] Write integration test: `FakeAccountAdapter.emitInbound()` with an
+- [X] T007 [P] [US1] Write integration test: `FakeAccountAdapter.emitInbound()` with an
       attachment-only inbound message (no `text`) dispatches a `message.created` event whose
       `event.message.attachments` matches exactly, and whose `event.message.text` is
       `undefined`, in `packages/core/tests/integration/attachment-round-trip.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Add `attachments?: readonly Attachment[]` to `Message` in
+- [X] T008 [US1] Add `attachments?: readonly Attachment[]` to `Message` in
       `packages/core/src/types/message.ts`. Depends on: T001, T003. Run `pnpm -r test` and
       confirm T005-T007 pass.
 
@@ -97,14 +97,14 @@ resolve with a delivery result.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T009 [P] [US2] Write unit test: `FakeAccountAdapter.send()` with a `{ url }`-sourced
+- [X] T009 [P] [US2] Write unit test: `FakeAccountAdapter.send()` with a `{ url }`-sourced
       attachment, on an adapter constructed with `capabilities: ["text", "attachments"]`,
       resolves with a delivery result of the same shape already returned for a text-only send,
       in `packages/testing/tests/fake-account.spec.ts`.
-- [ ] T010 [P] [US2] Write unit test (same file): the same adapter's `send()` with a
+- [X] T010 [P] [US2] Write unit test (same file): the same adapter's `send()` with a
       `{ data: Buffer }`-sourced attachment (and no `maxAttachmentSizeBytes` configured) also
       resolves normally.
-- [ ] T011 [P] [US2] Write unit test (same file): `chatter.send({ attachment, ...})` (via a
+- [X] T011 [P] [US2] Write unit test (same file): `chatter.send({ attachment, ...})` (via a
       `Chatter` instance wrapping the fake adapter, not calling the adapter directly) actually
       forwards the attachment through to the adapter's recorded `sentMessages` entry — proving
       `Chatter.send()`'s forwarding fix (T013) is real, in
@@ -112,12 +112,12 @@ resolve with a delivery result.
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Add `attachment?: Attachment` to `SendInput` in
+- [X] T012 [US2] Add `attachment?: Attachment` to `SendInput` in
       `packages/core/src/adapter/adapter.ts`. Depends on: T001, T003.
-- [ ] T013 [US2] Update `Chatter.send()` in `packages/core/src/orchestrator/chatter.ts` to
+- [X] T013 [US2] Update `Chatter.send()` in `packages/core/src/orchestrator/chatter.ts` to
       forward `input.attachment` into the `SendInput` it builds for the adapter (conditional
       inclusion, matching the existing `replyToMessageId` pattern). Depends on: T012.
-- [ ] T014 [US2] Add `attachment?: Attachment` handling to `FakeAccountAdapter.send()` in
+- [X] T014 [US2] Add `attachment?: Attachment` handling to `FakeAccountAdapter.send()` in
       `packages/testing/src/fake-account/fake-account-adapter.ts`: when present and
       `capabilities.has("attachments")`, accept it (no special handling needed beyond passing
       the existing checks — the delivery result shape is unaffected). Depends on: T012. Run
@@ -140,14 +140,14 @@ result/`sentMessages` entry was produced.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T015 [P] [US3] Write unit test: `FakeAccountAdapter.send()` with an attachment, on an
+- [X] T015 [P] [US3] Write unit test: `FakeAccountAdapter.send()` with an attachment, on an
       adapter constructed with `capabilities: ["text"]` (no `"attachments"`), rejects with
       `ChatterUnsupportedCapabilityError`, and `sentMessages` remains empty afterward, in
       `packages/testing/tests/fake-account.spec.ts`.
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] In `FakeAccountAdapter.send()`, reject with `ChatterUnsupportedCapabilityError`
+- [X] T016 [US3] In `FakeAccountAdapter.send()`, reject with `ChatterUnsupportedCapabilityError`
       when `input.attachment` is present and `!this.#capabilities.has("attachments")`, checked
       before the existing conversation/reply checks (mirroring the existing `"reply"`/`"thread"`
       capability-check pattern immediately above it), in
@@ -170,23 +170,23 @@ entries; confirm an attachment at or under the limit still succeeds.
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T017 [P] [US4] Write unit test: `FakeAccountAdapter` constructed with
+- [X] T017 [P] [US4] Write unit test: `FakeAccountAdapter` constructed with
       `maxAttachmentSizeBytes: 10`, `send()` with a `{ data: Buffer.alloc(11) }` attachment
       rejects with `ChatterConfigurationError`, and `sentMessages` remains empty, in
       `packages/testing/tests/fake-account.spec.ts`.
-- [ ] T018 [P] [US4] Write unit test (same file): the same adapter's `send()` with a
+- [X] T018 [P] [US4] Write unit test (same file): the same adapter's `send()` with a
       `{ data: Buffer.alloc(10) }` attachment (exactly at the limit) succeeds normally (the
       limit is inclusive, matching ticket #3's precedent for the text-length limit).
-- [ ] T019 [P] [US4] Write unit test (same file): an adapter constructed with NO
+- [X] T019 [P] [US4] Write unit test (same file): an adapter constructed with NO
       `maxAttachmentSizeBytes` performs no size check at all — a large `{data}` attachment
       succeeds (Edge Case: "no size check applies" without a known limit).
 
 ### Implementation for User Story 4
 
-- [ ] T020 [US4] Add `maxAttachmentSizeBytes?: number` to `FakeAccountAdapterConfig` and store it
+- [X] T020 [US4] Add `maxAttachmentSizeBytes?: number` to `FakeAccountAdapterConfig` and store it
       on the instance in `packages/testing/src/fake-account/fake-account-adapter.ts`. Depends
       on: T014.
-- [ ] T021 [US4] In `FakeAccountAdapter.send()`, when `input.attachment.source` has a `data`
+- [X] T021 [US4] In `FakeAccountAdapter.send()`, when `input.attachment.source` has a `data`
       field and `maxAttachmentSizeBytes` is configured, reject with `ChatterConfigurationError`
       if `data.byteLength > maxAttachmentSizeBytes`, checked before the capability/conversation
       checks and before incrementing `#sentCounter` (FR-007: before any transmission-equivalent
@@ -207,7 +207,7 @@ validated.
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T022 [US5] Update `packages/testing/tests/conformance.spec.ts`'s existing
+- [X] T022 [US5] Update `packages/testing/tests/conformance.spec.ts`'s existing
       `runAccountConformanceSuite` call to supply the new required `getTestAttachment` config
       field (a small `{ kind: "file", source: { data: Buffer.from("test") } }`), and run it once
       against a `FakeAccountAdapter` configured WITH `"attachments"` and once against one
@@ -216,7 +216,7 @@ validated.
 
 ### Implementation for User Story 5
 
-- [ ] T023 [US5] Add `getTestAttachment: () => Attachment` to `ConformanceSuiteConfig` in
+- [X] T023 [US5] Add `getTestAttachment: () => Attachment` to `ConformanceSuiteConfig` in
       `packages/testing/src/conformance/conformance-suite.ts`, and add two new conditional
       checks alongside the existing `"thread"`-capability checks: when
       `capabilities.has("attachments")`, assert a `getTestAttachment()`-carrying send succeeds
@@ -231,13 +231,13 @@ validated.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T024 [P] Update `packages/core/README.md` (or equivalent top-level docs) to document the
+- [X] T024 [P] Update `packages/core/README.md` (or equivalent top-level docs) to document the
       `Attachment` type, the `"attachments"` capability, and the `text`-becomes-optional change
       on `Message`/`SendInput`.
-- [ ] T025 [P] Update `packages/testing/README.md` (if one exists) to document
+- [X] T025 [P] Update `packages/testing/README.md` (if one exists) to document
       `maxAttachmentSizeBytes` and the new required `getTestAttachment` conformance-suite config
       field.
-- [ ] T026 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally across the whole
+- [X] T026 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally across the whole
       monorepo (including `packages/telegram` and `example-apps/telegram-echo`, to confirm the
       `text`-optional change didn't silently break anything beyond the one guarded line from
       T003) to confirm CI will pass before opening the pull request.

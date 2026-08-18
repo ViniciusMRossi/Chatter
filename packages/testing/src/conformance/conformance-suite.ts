@@ -2,6 +2,7 @@ import {
   ChatterInvalidTargetError,
   ChatterUnsupportedCapabilityError,
   type AccountAdapter,
+  type Attachment,
   type Conversation,
 } from "@chatter/core";
 import { describe, expect, it } from "vitest";
@@ -18,6 +19,8 @@ export interface ConformanceSuiteConfig {
   readonly getKnownConversation: (adapter: AccountAdapter) => Conversation | Promise<Conversation>;
   /** A conversation reference the adapter has never seen and must reject as invalid. */
   readonly getUnknownConversation: () => Conversation;
+  /** A small, valid attachment used to exercise the "attachments" capability checks. */
+  readonly getTestAttachment: () => Attachment;
 }
 
 /**
@@ -27,7 +30,7 @@ export interface ConformanceSuiteConfig {
  * unchanged, per constitution Principle IV.
  */
 export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void {
-  const { createAdapter, getKnownConversation, getUnknownConversation } = config;
+  const { createAdapter, getKnownConversation, getUnknownConversation, getTestAttachment } = config;
 
   describe("AccountAdapter conformance", () => {
     it("declares a non-empty capability set", () => {
@@ -96,6 +99,49 @@ export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void
           conversation: { ...conversation, providerThreadId: "conformance-thread" },
           text: "should not send",
         }),
+      ).rejects.toBeInstanceOf(ChatterUnsupportedCapabilityError);
+
+      await adapter.stop();
+    });
+
+    it("send() with an attachment succeeds when 'attachments' is declared", async () => {
+      const adapter = createAdapter();
+      if (!adapter.getCapabilities().has("attachments")) {
+        // Nothing to prove here — see the companion check below for the unsupported case. A
+        // caller wanting this check exercised should construct an adapter instance that
+        // declares "attachments".
+        return;
+      }
+
+      await adapter.start(() => {
+        // no-op
+      });
+      const conversation = await getKnownConversation(adapter);
+
+      const result = await adapter.send({ conversation, attachment: getTestAttachment() });
+
+      expect(result.provider).toBe(adapter.provider);
+      expect(result.providerMessageId).toBeTruthy();
+      expect(result.conversation).toBeDefined();
+
+      await adapter.stop();
+    });
+
+    it("send() with an attachment rejects with ChatterUnsupportedCapabilityError when 'attachments' is not declared", async () => {
+      const adapter = createAdapter();
+      if (adapter.getCapabilities().has("attachments")) {
+        // This adapter instance declares attachment support — nothing to prove unsupported
+        // here. See the companion check above for the supported case.
+        return;
+      }
+
+      await adapter.start(() => {
+        // no-op
+      });
+      const conversation = await getKnownConversation(adapter);
+
+      await expect(
+        adapter.send({ conversation, attachment: getTestAttachment() }),
       ).rejects.toBeInstanceOf(ChatterUnsupportedCapabilityError);
 
       await adapter.stop();

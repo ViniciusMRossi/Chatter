@@ -1,1 +1,1 @@
-export type Capability = "text" | "reply" | "thread";
+export type Capability = "text" | "reply" | "thread" | "attachments";
