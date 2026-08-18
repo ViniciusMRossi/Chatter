@@ -268,8 +268,14 @@ function createWindow(): void {
 app.whenReady().then(() => {
   createWindow();
   registerIpcHandlers();
-  startChatter().catch((error: unknown) => {
-    sendStatus(`Failed to start: ${error instanceof Error ? error.message : String(error)}`, "error");
+  // Wait for the renderer's script to actually attach its onStatus/onMessage listeners
+  // before sending anything — webContents.send() before that point is silently dropped
+  // (ipcRenderer.on() isn't a queue), which left the page stuck on its static "Starting…"
+  // placeholder no matter what happened in startChatter().
+  mainWindow?.webContents.once("did-finish-load", () => {
+    startChatter().catch((error: unknown) => {
+      sendStatus(`Failed to start: ${error instanceof Error ? error.message : String(error)}`, "error");
+    });
   });
 }).catch((error: unknown) => {
   console.error("Failed during startup", error);
