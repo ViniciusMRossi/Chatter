@@ -123,3 +123,11 @@ const adapter = new TelegramAccountAdapter(config, {
 The automated test suite runs entirely against a stubbed transport (no real Telegram
 credentials, ever, in CI). See `MANUAL-VERIFICATION.md` for the human-run checklist that proves
 this adapter actually works against Telegram's real servers.
+
+## API reference (Bruno)
+
+Every HTTP endpoint this adapter touches — the outbound Telegram Bot API calls (`getMe`,
+`setWebhook`, `deleteWebhook`, `sendMessage`) and the inbound webhook contract — is documented as
+a runnable [Bruno](https://www.usebruno.com/) collection at
+[`bruno/telegram-adapter/`](../../bruno/telegram-adapter). See [`bruno/README.md`](../../bruno/README.md)
+for setup.

@@ -1,0 +1,9 @@
+info:
+  name: Telegram Bot API (outbound)
+  type: folder
+  seq: 1
+
+docs: |-
+  The Bot API calls TelegramAccountAdapter makes internally, callable directly
+  here for manual setup/debugging. Requires a real `bot_token` in the Local
+  environment. See packages/telegram/README.md and MANUAL-VERIFICATION.md.

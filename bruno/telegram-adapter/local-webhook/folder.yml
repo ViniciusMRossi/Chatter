@@ -1,0 +1,11 @@
+info:
+  name: Local Webhook (inbound)
+  type: folder
+  seq: 2
+
+docs: |-
+  Synthetic Telegram webhook deliveries targeting your own locally running
+  webhook handler (e.g. `pnpm start` in example-apps/telegram-echo). These never
+  contact Telegram — no real bot, token, or tunnel required, just a server
+  listening at `local_webhook_url`. Payload shapes match the synthetic Updates
+  used in packages/telegram/tests/integration/*.spec.ts.

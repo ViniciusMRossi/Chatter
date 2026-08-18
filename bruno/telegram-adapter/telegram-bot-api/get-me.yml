@@ -1,0 +1,16 @@
+info:
+  name: Get Me
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{telegram_api_base}}/bot{{bot_token}}/getMe"
+  auth: none
+
+docs: |-
+  Confirms the bot token is valid and returns basic bot info (id, username, ...).
+  TelegramAccountAdapter.start() calls this internally to resolve the bot's own
+  Telegram user ID, used as `providerAccountId` (packages/telegram/src/adapter/
+  telegram-account-adapter.ts). A 401 here means the token is invalid or revoked
+  — maps to ChatterAuthenticationError in the adapter.

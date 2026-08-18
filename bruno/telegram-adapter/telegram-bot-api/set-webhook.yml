@@ -1,0 +1,26 @@
+info:
+  name: Set Webhook
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{telegram_api_base}}/bot{{bot_token}}/setWebhook"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "url": "{{public_webhook_url}}",
+        "secret_token": "{{webhook_secret}}"
+      }
+  auth: none
+
+docs: |-
+  Registers a webhook — what TelegramAccountAdapter.start() does automatically
+  after Get Me succeeds. Useful for testing webhook registration in isolation
+  without running the full example app. `secret_token` is what Telegram will echo
+  back in the `X-Telegram-Bot-Api-Secret-Token` header on every delivery — must
+  match the `webhookSecret` your adapter is configured with.

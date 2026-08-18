@@ -1,0 +1,28 @@
+info:
+  name: Send Message
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{telegram_api_base}}/bot{{bot_token}}/sendMessage"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "chat_id": "{{chat_id}}",
+        "text": "Hello from Bruno"
+      }
+  auth: none
+
+docs: |-
+  Sends a text message directly via the Bot API — what
+  TelegramAccountAdapter.send() does internally (with `reply_parameters` added
+  when replying to a specific message). Useful for confirming your bot can
+  message a given `chat_id` before wiring up the full adapter. A `chat_id` the
+  bot has never interacted with, or one that's since migrated to a supergroup,
+  fails here the same way it fails in the adapter — see the error-mapping table
+  in packages/telegram/README.md.

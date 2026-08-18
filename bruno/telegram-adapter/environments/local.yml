@@ -1,0 +1,50 @@
+name: Local
+variables:
+  - name: telegram_api_base
+    value: https://api.telegram.org
+    enabled: true
+    secret: false
+    description: Telegram's Bot API base URL — should not normally need to change.
+
+  - name: bot_token
+    value: ""
+    enabled: true
+    secret: true
+    description: |-
+      Your bot's token from @BotFather (see packages/telegram/README.md §1). Fill
+      this in locally via the Bruno app's UI, not by editing this committed file —
+      Bruno stores secret values outside the synced collection.
+
+  - name: webhook_secret
+    value: ""
+    enabled: true
+    secret: true
+    description: |-
+      The webhook secret configured on your TelegramAccountAdapter (see
+      packages/telegram/README.md §2). Fill this in locally, not in this file.
+
+  - name: public_webhook_url
+    value: https://your-tunnel.example.com/telegram-webhook
+    enabled: true
+    secret: false
+    description: |-
+      The public HTTPS URL Telegram should deliver updates to (used by Set
+      Webhook) — your tunnel URL for local dev, or your real server in
+      production.
+
+  - name: local_webhook_url
+    value: http://localhost:3000/telegram-webhook
+    enabled: true
+    secret: false
+    description: |-
+      Where your own webhook handler is actually listening (e.g.
+      example-apps/telegram-echo running locally). Used by the local-webhook/
+      folder — these requests never go to Telegram at all.
+
+  - name: chat_id
+    value: ""
+    enabled: true
+    secret: false
+    description: |-
+      A real Telegram chat ID (a DM with your bot, or a group it's in) to target
+      with Send Message.
