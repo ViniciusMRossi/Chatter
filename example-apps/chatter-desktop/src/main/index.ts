@@ -46,6 +46,7 @@ function sendToRenderer(channel: string, payload: unknown): void {
 }
 
 function sendStatus(text: string, level: StatusView["level"] = "info"): void {
+  console.log(`[status:${level}] ${text}`);
   sendToRenderer(IPC_CHANNELS.status, { text, level } satisfies StatusView);
 }
 
@@ -258,6 +259,13 @@ function createWindow(): void {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      // Electron's default sandboxed preload can only require() a small built-in allowlist —
+      // not local files via a relative path, which preload.ts does (to share IPC_CHANNELS
+      // with this file rather than duplicating the channel name strings). contextIsolation
+      // above is what actually keeps the untrusted page content out of preload's privileged
+      // scope; sandbox: false only affects what preload itself is allowed to require, and
+      // this app only ever loads its own bundled, local index.html — never remote content.
+      sandbox: false,
     },
   });
   // Forwards renderer-side console.log/error/warn (and any uncaught script error, which
