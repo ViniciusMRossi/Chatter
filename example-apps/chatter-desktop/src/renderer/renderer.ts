@@ -29,7 +29,9 @@ interface ChatterAPI {
 // declaration, even though eslint's static analysis can't see that.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface Window {
-  chatterAPI: ChatterAPI;
+  // Optional, not guaranteed: reflects that the preload script exposing this can fail to
+  // run (wrong path, thrown error, etc.) — see the runtime check at the bottom of this file.
+  chatterAPI?: ChatterAPI;
 }
 
 const messagesEl = document.getElementById("messages");
@@ -110,7 +112,7 @@ function renderMessage(message: MessageView): void {
       openButton.type = "button";
       openButton.textContent = "Open";
       openButton.addEventListener("click", () => {
-        window.chatterAPI.openAttachment(message.id).catch((error: unknown) => {
+        window.chatterAPI?.openAttachment(message.id).catch((error: unknown) => {
           console.error("Failed to open attachment", error);
         });
       });
@@ -138,7 +140,7 @@ function sendCurrentText(): void {
   }
   const text = textInput.value.trim();
   textInput.value = "";
-  window.chatterAPI.sendText(text).catch((error: unknown) => {
+  window.chatterAPI?.sendText(text).catch((error: unknown) => {
     setStatus({ text: `Failed to send: ${String(error)}`, level: "error" });
   });
 }
@@ -155,10 +157,15 @@ attachButton?.addEventListener("click", () => {
   if (textInput !== null) {
     textInput.value = "";
   }
-  window.chatterAPI.pickAttachment(caption).catch((error: unknown) => {
+  window.chatterAPI?.pickAttachment(caption).catch((error: unknown) => {
     setStatus({ text: `Failed to send attachment: ${String(error)}`, level: "error" });
   });
 });
 
-window.chatterAPI.onMessage(renderMessage);
-window.chatterAPI.onStatus(setStatus);
+if (window.chatterAPI === undefined) {
+  console.error("window.chatterAPI is undefined — the preload script did not run/expose it.");
+  setStatus({ text: "Internal error: preload script did not load (see DevTools console).", level: "error" });
+} else {
+  window.chatterAPI.onMessage(renderMessage);
+  window.chatterAPI.onStatus(setStatus);
+}
