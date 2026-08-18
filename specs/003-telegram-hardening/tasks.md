@@ -166,7 +166,7 @@ produces an actionable failure.
 
 ### Implementation for User Story 5
 
-- [ ] T017 [US5] Write `packages/telegram/MANUAL-VERIFICATION.md`: a checklist covering webhook
+- [X] T017 [US5] Write `packages/telegram/MANUAL-VERIFICATION.md`: a checklist covering webhook
       registration against Telegram's real servers, a direct-chat round trip, and a group-chat
       round trip, per FR-008 — reusing `example-apps/telegram-echo` from ticket #2 as the app
       under test.
