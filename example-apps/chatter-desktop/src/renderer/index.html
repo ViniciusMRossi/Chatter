@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline';" />
+    <title>Chatter Desktop</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header id="header">
+      <h1>Chatter Desktop</h1>
+      <p id="status">Starting…</p>
+    </header>
+    <main id="messages" aria-live="polite"></main>
+    <footer id="composer">
+      <button id="attach-button" type="button" title="Attach a file">📎</button>
+      <input id="text-input" type="text" placeholder="Type a message…" autocomplete="off" />
+      <button id="send-button" type="button">Send</button>
+    </footer>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

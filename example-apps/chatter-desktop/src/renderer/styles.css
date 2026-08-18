@@ -1,0 +1,158 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f8f8f8;
+  color: #1d1c1d;
+}
+
+#header {
+  padding: 12px 20px;
+  background: #350d36;
+  color: white;
+  flex-shrink: 0;
+}
+
+#header h1 {
+  margin: 0;
+  font-size: 16px;
+}
+
+#status {
+  margin: 4px 0 0;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+#status.error {
+  color: #ff8a8a;
+  opacity: 1;
+}
+
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message {
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.message.outbound {
+  align-self: flex-end;
+  background: #e8f5e9;
+}
+
+.message-meta {
+  font-size: 12px;
+  color: #616061;
+  margin-bottom: 4px;
+}
+
+.message-meta .sender {
+  font-weight: 700;
+  color: #1d1c1d;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-image {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 4px;
+  display: block;
+  margin-top: 4px;
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px;
+  background: #f4f4f4;
+  border-radius: 6px;
+}
+
+.file-chip-icon {
+  font-size: 20px;
+}
+
+.file-chip-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-chip-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-chip-size {
+  font-size: 12px;
+  color: #616061;
+}
+
+.file-chip button {
+  border: none;
+  background: #350d36;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  border-top: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+#text-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+#attach-button,
+#send-button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #350d36;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#attach-button:disabled,
+#send-button:disabled,
+#text-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

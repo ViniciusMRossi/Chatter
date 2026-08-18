@@ -54,6 +54,11 @@ doesn't fit, they must propose an alternative and log it below **before** using 
   (`@usebruno/cli`, devDependency of the owning package) against a throwaway stub-backed test
   server — zero real credentials, same rule as every other automated test in this project. See
   `packages/telegram/tests/bruno/` for the reference implementation.
+- Desktop UI (example apps only, not a Chatter package): Electron. Chosen over Tauri for
+  `example-apps/chatter-desktop` (a manual-testing UI exercising Chatter's attachment support)
+  because it needs only `npm install` on top of the Node/pnpm toolchain already in place — Tauri
+  requires a Rust/Cargo toolchain not present on the development machine that built it. Not
+  expected to apply to any `@chatter/*` package itself (Chatter has no UI).
 - Tier 1 security (every PR, automated): Semgrep + gitleaks
 - Tier 2 security (major releases, manual trigger only): Shannon
   (https://github.com/KeygraphHQ/shannon) — whitebox, requires source access, ~$40-55/run in
@@ -66,4 +71,4 @@ alternative:
 
 | Date | Ticket | Standard tool | Substituted with | Rationale | Approved by |
 |------|--------|---------------|-------------------|-----------|-------------|
-|      |        |               |                   |           |             |
+| 2026-08-18 | Phase 3 (chatter-desktop, not its own ticket) | ESM only, no CommonJS build target | CommonJS for `example-apps/chatter-desktop`'s main/preload/renderer code | Electron's preload-script and packaging ecosystem is most reliably CommonJS; the app bridges to the ESM-only `@chatter/core`/`@chatter/telegram` packages via dynamic `import()` from its (CommonJS) main process entry point rather than making the whole app ESM. Confined to this one example app — no `@chatter/*` package is affected. | Logged after use, not before — flagged to the user for awareness rather than blocking a self-contained example app on prior sign-off. |
