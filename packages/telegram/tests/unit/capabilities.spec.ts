@@ -3,7 +3,7 @@ import { TelegramAccountAdapter } from "../../src/adapter/telegram-account-adapt
 import { StubTelegramTransport } from "../support/stub-transport.js";
 
 describe("Telegram adapter capabilities", () => {
-  it("declares text and reply, but not thread", () => {
+  it("declares text, reply, and attachments, but not thread", () => {
     const transport = new StubTelegramTransport();
     const adapter = new TelegramAccountAdapter(
       {
@@ -18,7 +18,8 @@ describe("Telegram adapter capabilities", () => {
 
     expect(capabilities.has("text")).toBe(true);
     expect(capabilities.has("reply")).toBe(true);
+    expect(capabilities.has("attachments")).toBe(true);
     expect(capabilities.has("thread")).toBe(false);
-    expect(capabilities.size).toBe(2);
+    expect(capabilities.size).toBe(3);
   });
 });

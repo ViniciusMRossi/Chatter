@@ -86,6 +86,37 @@ export class StubTelegramTransport {
           },
         };
       }
+      case "sendPhoto":
+      case "sendVideo":
+      case "sendDocument": {
+        if (payload.chat_id === UNKNOWN_CHAT_ID) {
+          return { ok: false, error_code: 400, description: "Bad Request: chat not found" };
+        }
+        this.#sentMessageCounter += 1;
+        const mediaField = method === "sendPhoto" ? "photo" : method === "sendVideo" ? "video" : "document";
+        return {
+          ok: true,
+          result: {
+            message_id: this.#sentMessageCounter,
+            date: Math.floor(Date.now() / 1000),
+            chat: { id: payload.chat_id, type: "private" },
+            ...(payload.caption !== undefined ? { caption: payload.caption } : {}),
+            [mediaField]: payload[mediaField],
+          },
+        };
+      }
+      case "getFile": {
+        const fileId = typeof payload.file_id === "string" ? payload.file_id : "";
+        return {
+          ok: true,
+          result: {
+            file_id: fileId,
+            file_unique_id: `${fileId}-unique`,
+            file_size: 1024,
+            file_path: `stub-files/${fileId}`,
+          },
+        };
+      }
       case "setWebhook":
       case "deleteWebhook":
         return { ok: true, result: true };

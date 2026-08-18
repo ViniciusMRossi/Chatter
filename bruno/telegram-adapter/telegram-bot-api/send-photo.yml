@@ -1,0 +1,39 @@
+info:
+  name: Send Photo
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{telegram_api_base}}/bot{{bot_token}}/sendPhoto"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "chat_id": "{{chat_id}}",
+        "photo": "https://picsum.photos/seed/chatter/400",
+        "caption": "Sent from Bruno"
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("photo sent", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.ok).to.equal(true);
+          expect(res.body.result.photo).to.be.an("array");
+        });
+
+docs: |-
+  Sends a photo by URL — what TelegramAccountAdapter.send() does internally
+  for a `{ url }`-sourced image attachment (Telegram fetches the URL itself;
+  no bytes pass through the adapter). Useful for confirming your bot can send
+  photos to a given `chat_id` before wiring up the full adapter. Uploading raw
+  bytes ({ data: Buffer }, via grammY's InputFile) isn't representable as a
+  plain JSON request here — see packages/telegram/tests/unit/send-attachment.spec.ts
+  for that path's automated coverage instead.

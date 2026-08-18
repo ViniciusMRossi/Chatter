@@ -1,0 +1,45 @@
+info:
+  name: Document Message
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100005,
+        "message": {
+          "message_id": 5,
+          "date": 1700000000,
+          "chat": { "id": 555, "type": "private", "first_name": "Ada" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "document": {
+            "file_id": "doc-1",
+            "file_unique_id": "doc-1-u",
+            "file_name": "report.pdf",
+            "mime_type": "application/pdf"
+          }
+        }
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("responds 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  Simulates Telegram delivering a document (file) message — proves the
+  document branch of the dispatch gate and mapping, distinct from the photo
+  branch above, per specs/005-telegram-attachment-mapping Story 1.

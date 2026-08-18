@@ -1,8 +1,16 @@
 import type { Update } from "@grammyjs/types";
 import type { TelegramAccountAdapter } from "../adapter/telegram-account-adapter.js";
-import { mapMessage, type TelegramTextMessage } from "../mapping/message.js";
 
 const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token";
+
+function hasDispatchableContent(message: Update["message"]): boolean {
+  return (
+    message?.text !== undefined ||
+    message?.photo !== undefined ||
+    message?.video !== undefined ||
+    message?.document !== undefined
+  );
+}
 
 /**
  * Framework-independent webhook handler (FR-002): a plain `Request -> Promise<Response>`
@@ -32,8 +40,18 @@ export function createTelegramWebhookHandler(
     }
 
     const message = update.message;
-    if (message?.text !== undefined && adapter.botUserId !== undefined) {
-      adapter.dispatchInbound(mapMessage(message as TelegramTextMessage, adapter.botUserId));
+    if (hasDispatchableContent(message) && adapter.botUserId !== undefined && message) {
+      try {
+        const mapped = await adapter.mapInboundMessage(message);
+        adapter.dispatchInbound(mapped);
+      } catch (error) {
+        // Resolving an attachment's download URL is a real network call (getFile) that can
+        // fail — this must not crash the handler or leave the update unacknowledged (Telegram
+        // would just retry). Surfaced non-fatally, same pattern as stop()'s cleanup failure.
+        adapter.reportNonFatalError(
+          `Failed to map inbound Telegram message: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
     }
     adapter.recordProcessedUpdate(update.update_id);
 

@@ -56,11 +56,44 @@ your bot at all. This is a Telegram platform behavior, not something Chatter con
 
 - `text` — sending and receiving plain text messages.
 - `reply` — replying to a specific prior message (Telegram's native reply-to-message feature).
+- `attachments` — sending and receiving a single image, video, or file per message (see below).
 
-Not supported this release: `thread` (Telegram's "topics"/forum-thread feature) and
-`attachments`. A send targeting a thread reference, or carrying an attachment, rejects with
-`ChatterUnsupportedCapabilityError` rather than silently sending to the wrong place or dropping
-the attachment.
+Not supported this release: `thread` (Telegram's "topics"/forum-thread feature). A send
+targeting a thread reference rejects with `ChatterUnsupportedCapabilityError` rather than
+silently sending to the wrong place.
+
+## Attachments
+
+Inbound photo/video/document updates are dispatched as a `Message` with a populated
+`attachments` array; Telegram's `caption` field (when present) becomes `Message.text`, exactly
+like a plain text message — an attachment never requires a caption. Outbound, `SendInput.attachment`
+accepts either a `{ url }` reference (Telegram fetches it server-side — no bytes pass through
+this adapter) or `{ data: Buffer }` for a genuine upload; `SendInput.text`, when present alongside
+an attachment, becomes the outbound `caption`.
+
+**Real Telegram constraints this adapter enforces or is subject to** — not values this adapter
+invented, and not something a future Telegram API change would let this adapter unilaterally
+change either:
+
+- **Send-side size limits**: directly-supplied (`{ data: Buffer }`) attachments are rejected with
+  `ChatterConfigurationError` *before* any API call if they exceed Telegram's real limit for
+  their kind — **10 MB for images, 50 MB for video/file**. A `{ url }`-sourced attachment isn't
+  size-checked client-side (its size isn't knowable in advance); if Telegram itself rejects it,
+  that surfaces through this adapter's normal error mapping, not a special case.
+- **Download cap, independent of the send-side limit**: resolving a received attachment's
+  download URL goes through Telegram's `getFile`, which **refuses anything over 20 MB regardless
+  of the file's original size** — a 45 MB video Telegram happily accepted on the way in cannot be
+  re-downloaded through this mechanism at all.
+- **Download URLs are temporary**: a resolved `Attachment.source.url` is guaranteed valid for
+  only about an hour. This adapter does not attempt to refresh or extend it — an application
+  needing the content later should fetch it promptly.
+- **Download URLs are sensitive — treat them like a credential, not a public link**: Telegram's
+  file-download mechanism has no way to produce a downloadable URL without embedding the bot's
+  own token directly in it (`https://api.telegram.org/file/bot<token>/<path>`). A resolved
+  `Attachment.source.url` must never be logged, displayed in a debugging tool, or forwarded to an
+  untrusted party — for roughly the next hour, whoever holds that URL can act as the bot. This
+  adapter itself never logs a resolved URL at any level; the same care must be exercised by any
+  application code the URL reaches.
 
 ## Known limitations
 
@@ -69,10 +102,8 @@ the attachment.
   posting/reading isn't a supported flow yet.
 - Message edits, deletions, reactions, and interactive components (inline keyboards, commands)
   are not normalized this release.
-- Attachments/media are not yet represented — only text messages are normalized. `@chatter/core`'s
-  `Message.text`/`SendInput.text` are optional (to support attachment-only messages on adapters
-  that do support them), but this adapter still requires `text` to send anything — a `send()`
-  call with no `text` rejects with `ChatterConfigurationError`.
+- Only a single attachment per message is supported (matching `@chatter/core`'s own
+  one-attachment-per-send contract) — no multi-attachment albums.
 - Only webhook-based delivery is supported; long polling is not implemented.
 
 ## Error mapping

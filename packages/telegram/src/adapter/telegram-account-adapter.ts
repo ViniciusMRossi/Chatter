@@ -9,14 +9,22 @@ import {
   type SendInput,
 } from "@chatter/core";
 import { timingSafeEqual } from "node:crypto";
-import { Api } from "grammy";
+import type { Message as TelegramMessage } from "@grammyjs/types";
+import { Api, InputFile } from "grammy";
 import type { TelegramAccountConfig } from "../config/telegram-account-config.js";
 import { UpdateDedupWindow } from "../dedup/update-dedup-window.js";
 import { mapTelegramError } from "../errors/map-telegram-error.js";
+import { mapMessage } from "../mapping/message.js";
 
-const CAPABILITIES: ReadonlySet<Capability> = new Set(["text", "reply"]);
+const CAPABILITIES: ReadonlySet<Capability> = new Set(["text", "reply", "attachments"]);
 /** Telegram's documented per-message text limit (characters). */
 const TELEGRAM_TEXT_LIMIT = 4096;
+/** Telegram's real send-side size limits per attachment kind (bytes). */
+const TELEGRAM_ATTACHMENT_SIZE_LIMITS: Record<string, number> = {
+  image: 10_000_000,
+  video: 50_000_000,
+  file: 50_000_000,
+};
 
 export interface TelegramAccountAdapterOptions {
   /** Injectable for testing — defaults to a real grammY `Api` client. */
@@ -105,36 +113,45 @@ export class TelegramAccountAdapter implements AccountAdapter {
         "this Telegram adapter does not support thread-targeted sends",
       );
     }
-    if (input.attachment !== undefined) {
-      // Attachment mapping is out of scope this ticket (see specs/004-attachment-model) —
-      // this adapter never declares the "attachments" capability, so honor that honestly
-      // rather than silently dropping the attachment or misreporting the failure reason.
-      throw new ChatterUnsupportedCapabilityError(
-        "this Telegram adapter does not support attachments",
-      );
-    }
-    if (input.text === undefined) {
-      // @chatter/core's SendInput.text became optional to support attachment-only sends
-      // (see specs/004-attachment-model) — this adapter doesn't implement attachments yet
-      // (that's the next ticket), so text is still required here for now.
+    if (input.text === undefined && input.attachment === undefined) {
       throw new ChatterConfigurationError(
-        "this Telegram adapter requires message text — attachment-only sends are not yet supported",
+        "this Telegram adapter requires message text or an attachment — a send needs at least one",
       );
     }
-    if (input.text.length > TELEGRAM_TEXT_LIMIT) {
+    if (input.text !== undefined && input.text.length > TELEGRAM_TEXT_LIMIT) {
       throw new ChatterConfigurationError(
         `Telegram message text exceeds the ${String(TELEGRAM_TEXT_LIMIT)}-character limit (got ${String(input.text.length)} characters)`,
       );
     }
+    if (input.attachment !== undefined && "data" in input.attachment.source) {
+      const limit = TELEGRAM_ATTACHMENT_SIZE_LIMITS[input.attachment.kind];
+      const size = input.attachment.source.data.byteLength;
+      if (limit !== undefined && size > limit) {
+        throw new ChatterConfigurationError(
+          `attachment exceeds the ${String(limit)}-byte limit for kind "${input.attachment.kind}" (got ${String(size)} bytes)`,
+        );
+      }
+    }
+
+    const replyParameters =
+      input.replyToMessageId !== undefined
+        ? { reply_parameters: { message_id: Number(input.replyToMessageId) } }
+        : undefined;
 
     try {
-      const result = await this.#api.sendMessage(
-        Number(input.conversation.providerConversationId),
-        input.text,
-        input.replyToMessageId !== undefined
-          ? { reply_parameters: { message_id: Number(input.replyToMessageId) } }
-          : undefined,
-      );
+      let result: { message_id: number; date: number };
+      if (input.attachment !== undefined) {
+        result = await this.#sendAttachment(input, replyParameters);
+      } else if (input.text !== undefined) {
+        result = await this.#api.sendMessage(
+          Number(input.conversation.providerConversationId),
+          input.text,
+          replyParameters,
+        );
+      } else {
+        // Unreachable: the no-text-and-no-attachment case was already rejected above.
+        throw new ChatterConfigurationError("this Telegram adapter requires message text or an attachment");
+      }
       return {
         provider: "telegram",
         providerMessageId: String(result.message_id),
@@ -146,9 +163,51 @@ export class TelegramAccountAdapter implements AccountAdapter {
     }
   }
 
+  #sendAttachment(
+    input: SendInput,
+    other: { reply_parameters: { message_id: number } } | undefined,
+  ): Promise<{ message_id: number; date: number }> {
+    const attachment = input.attachment;
+    if (attachment === undefined) {
+      throw new ChatterConfigurationError("expected an attachment to send");
+    }
+    const chatId = Number(input.conversation.providerConversationId);
+    const media =
+      "url" in attachment.source
+        ? attachment.source.url
+        : new InputFile(attachment.source.data, attachment.fileName);
+    const params = { ...other, ...(input.text !== undefined ? { caption: input.text } : {}) };
+
+    switch (attachment.kind) {
+      case "image":
+        return this.#api.sendPhoto(chatId, media, params);
+      case "video":
+        return this.#api.sendVideo(chatId, media, params);
+      case "file":
+        return this.#api.sendDocument(chatId, media, params);
+    }
+  }
+
   /** Used by createTelegramWebhookHandler() to forward a mapped inbound message. */
   dispatchInbound(message: InboundMessage): void {
     this.#dispatch?.(message);
+  }
+
+  /** Used by createTelegramWebhookHandler() to surface a non-fatal inbound mapping failure. */
+  reportNonFatalError(message: string): void {
+    this.#onNonFatalError(message);
+  }
+
+  /**
+   * Maps a raw Telegram message into the normalized `InboundMessage` shape, resolving any
+   * attachment's download URL via `getFile` internally — keeps the bot token fully
+   * encapsulated in the adapter rather than exposing it to `createTelegramWebhookHandler()`.
+   */
+  mapInboundMessage(message: TelegramMessage): Promise<InboundMessage> {
+    if (this.#botUserId === undefined) {
+      throw new ChatterConfigurationError("cannot map an inbound message before start() completes");
+    }
+    return mapMessage(message, this.#botUserId, this.#api, this.#config.botToken);
   }
 
   /** Used by createTelegramWebhookHandler() to skip redelivered updates. */
