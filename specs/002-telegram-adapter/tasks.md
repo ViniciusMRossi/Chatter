@@ -91,30 +91,30 @@ secret) and confirm a `message.created` event with conversation type `"direct"`;
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T011 [P] [US1] Write failing unit test: `chat.type: "private"` maps to conversation type
+- [X] T011 [P] [US1] Write failing unit test: `chat.type: "private"` maps to conversation type
       `"direct"` in `packages/telegram/tests/unit/mapping.spec.ts`.
-- [ ] T012 [P] [US1] Write failing integration test: a synthetic direct-chat `Update` POSTed to
+- [X] T012 [P] [US1] Write failing integration test: a synthetic direct-chat `Update` POSTed to
       the webhook handler dispatches one normalized `message.created` event; a subsequent
       `send()` reply is recorded by the stubbed transport with the correct chat ID and
       `reply_parameters`, in `packages/telegram/tests/integration/direct-chat.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement `TelegramAccountAdapter.start()` (`getMe()` to resolve
+- [X] T013 [US1] Implement `TelegramAccountAdapter.start()` (`getMe()` to resolve
       `providerAccountId`, throwing `ChatterAuthenticationError` on failure per data-model.md;
       then `setWebhook` registration) and `stop()` (`deleteWebhook`, clear stored dispatch;
       must not throw if `start()` never completed) in
       `packages/telegram/src/adapter/telegram-account-adapter.ts`. Depends on: T005, T008, T009.
-- [ ] T014 [US1] Implement `TelegramAccountAdapter.send()` (Telegram `sendMessage` with
+- [X] T014 [US1] Implement `TelegramAccountAdapter.send()` (Telegram `sendMessage` with
       `reply_parameters` when `replyToMessageId` is set; maps the response to
       `AdapterDeliveryResult`; routes failures through the T008 error mapper) in the same file.
       Depends on: T013.
-- [ ] T015 [US1] Implement `createTelegramWebhookHandler()` (parses the `Update` body, applies
+- [X] T015 [US1] Implement `createTelegramWebhookHandler()` (parses the `Update` body, applies
       the T007 message mapping, calls `dispatch`) in
       `packages/telegram/src/webhook/telegram-webhook-handler.ts`. Depends on: T006, T007, T013.
-- [ ] T016 [US1] Wire `packages/telegram/src/index.ts` to export `TelegramAccountAdapter`,
+- [X] T016 [US1] Wire `packages/telegram/src/index.ts` to export `TelegramAccountAdapter`,
       `createTelegramWebhookHandler`, and `TelegramAccountConfig`. Depends on: T013, T014, T015.
-- [ ] T017 [US1] Run `pnpm -r test` and confirm T011 and T012 now pass.
+- [X] T017 [US1] Run `pnpm -r test` and confirm T011 and T012 now pass.
 
 **Checkpoint**: User Story 1 fully functional and independently testable — this is the MVP for
 this ticket.
