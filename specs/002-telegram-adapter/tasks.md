@@ -192,30 +192,30 @@ resulting error type, `retryable`/`retryAfterMs` where relevant, and capability 
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T025 [P] [US4] Write failing unit test: a synthetic 401 "Unauthorized" response maps to
+- [X] T025 [P] [US4] Write failing unit test: a synthetic 401 "Unauthorized" response maps to
       `ChatterAuthenticationError`, in `packages/telegram/tests/unit/errors.spec.ts`.
-- [ ] T026 [P] [US4] Write failing unit test: synthetic "chat not found" (400) and "bot was
+- [X] T026 [P] [US4] Write failing unit test: synthetic "chat not found" (400) and "bot was
       blocked"/"kicked" (403) responses both map to `ChatterInvalidTargetError`, in the same
       file.
-- [ ] T027 [P] [US4] Write failing unit test: a synthetic 429 response with `retry_after: 5`
+- [X] T027 [P] [US4] Write failing unit test: a synthetic 429 response with `retry_after: 5`
       maps to `ChatterRateLimitError` with `retryable: true` and `retryAfterMs: 5000`, in the
       same file.
-- [ ] T028 [P] [US4] Write failing unit test: `TelegramAccountAdapter.getCapabilities()` returns
+- [X] T028 [P] [US4] Write failing unit test: `TelegramAccountAdapter.getCapabilities()` returns
       exactly `{"text", "reply"}` — `has("thread")` is `false` — in
       `packages/telegram/tests/unit/capabilities.spec.ts`.
-- [ ] T029 [P] [US4] Write failing unit test: triggering an authentication failure with a known
+- [X] T029 [P] [US4] Write failing unit test: triggering an authentication failure with a known
       bot token/webhook secret produces an error whose `message` (and any `cause` chain) does
       not contain either secret value, in
       `packages/telegram/tests/unit/secret-redaction.spec.ts`.
 
 ### Implementation for User Story 4
 
-- [ ] T030 [US4] Complete the T008 error-mapping function to cover every case above and ensure
+- [X] T030 [US4] Complete the T008 error-mapping function to cover every case above and ensure
       every `TelegramAccountAdapter` call site (`start()`, `send()`) routes grammY-originated
       errors through it rather than propagating them raw, in
       `packages/telegram/src/errors/map-telegram-error.ts` and
       `packages/telegram/src/adapter/telegram-account-adapter.ts`. Depends on: T008, T013, T014.
-- [ ] T031 [US4] Set `getCapabilities()` to return exactly `{"text", "reply"}` in
+- [X] T031 [US4] Set `getCapabilities()` to return exactly `{"text", "reply"}` in
       `packages/telegram/src/adapter/telegram-account-adapter.ts`. Depends on: T013. Run
       `pnpm -r test` and confirm T025-T029 pass.
 
