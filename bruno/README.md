@@ -37,3 +37,25 @@ Every file in this directory is safe to commit as-is: request definitions, folde
 environment variable *names*/*descriptions*/non-secret defaults. No bot tokens, webhook secrets,
 or other credentials are ever written to these files — see each environment file's `secret: true`
 fields and `bruno/.gitignore`.
+
+## Automated testing
+
+Every request has a `tests` block (Bruno's Chai-based assertion scripts), so these collections
+are executable test suites, not just documentation — required per `AGENTS.md`'s "API
+documentation" section alongside adding/updating the requests themselves.
+
+- **Requests that don't touch a real provider** (e.g. `telegram-adapter/local-webhook/`, which
+  targets your own server) run automatically in CI — see the owning package's `test:bruno`
+  script (e.g. `pnpm --filter @chatter/telegram run test:bruno`) and
+  `.github/workflows/ci.yml`'s `bruno-webhook-tests` job. These use a `CI` environment with
+  fixed, non-real fixture values (not `secret: true` — there's nothing sensitive to protect when
+  nothing real is being called) and a small CI-only test server under the package's
+  `tests/bruno/` directory.
+- **Requests that call a real provider API** (e.g. `telegram-adapter/telegram-bot-api/`) still
+  have `tests` blocks — useful as a smoke test when you run them locally with real credentials
+  filled in — but are never run in CI, since that would need a real, live credential.
+
+Run any folder manually with the Bruno CLI: `bru run <collection-dir>/<folder> --env <name>`
+(or the whole collection with no folder argument). You may see a harmless
+`toBrunoAuth failed: Unsupported auth type` warning per request from `auth: none` — it doesn't
+affect execution or results, just cosmetic CLI output.

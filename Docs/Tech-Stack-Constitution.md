@@ -48,6 +48,12 @@ doesn't fit, they must propose an alternative and log it below **before** using 
   `bruno/<provider>-adapter/`, one per provider adapter; see `bruno/README.md` for the layout
   and secret-handling convention (secret-flagged variables, blank in the committed environment
   file — never a real token/secret in git).
+- API contract testing: every Bruno request carries a `tests` block (Bruno's own Chai-based
+  assertion runtime) and, for endpoints that don't need a real provider credential (e.g. a
+  webhook handler under our own control), runs automatically in CI via the Bruno CLI
+  (`@usebruno/cli`, devDependency of the owning package) against a throwaway stub-backed test
+  server — zero real credentials, same rule as every other automated test in this project. See
+  `packages/telegram/tests/bruno/` for the reference implementation.
 - Tier 1 security (every PR, automated): Semgrep + gitleaks
 - Tier 2 security (major releases, manual trigger only): Shannon
   (https://github.com/KeygraphHQ/shannon) — whitebox, requires source access, ~$40-55/run in

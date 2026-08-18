@@ -8,6 +8,16 @@ http:
   url: "{{telegram_api_base}}/bot{{bot_token}}/getMe"
   auth: none
 
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("token is valid", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.ok).to.equal(true);
+          expect(res.body.result.is_bot).to.equal(true);
+        });
+
 docs: |-
   Confirms the bot token is valid and returns basic bot info (id, username, ...).
   TelegramAccountAdapter.start() calls this internally to resolve the bot's own

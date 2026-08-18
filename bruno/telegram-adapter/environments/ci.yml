@@ -1,0 +1,51 @@
+name: CI
+variables:
+  - name: telegram_api_base
+    value: https://api.telegram.org
+    enabled: true
+    secret: false
+    description: |-
+      Unused — the CI run only ever executes local-webhook/, which never
+      contacts Telegram. Present for schema parity with the Local environment.
+
+  - name: bot_token
+    value: unused-in-ci
+    enabled: true
+    secret: false
+    description: |-
+      Unused in CI (no outbound Telegram calls are made). Not a real credential
+      — safe to commit.
+
+  - name: webhook_secret
+    value: ci-test-webhook-secret
+    enabled: true
+    secret: false
+    description: |-
+      A fixed, non-real value shared with tests/bruno/webhook-test-server.ts.
+      This is a test fixture, not a credential — it only has to match between
+      this file and that script, both committed, both meaningless outside a CI
+      run against the stub-backed test server.
+
+  - name: public_webhook_url
+    value: http://localhost:3300/telegram-webhook
+    enabled: true
+    secret: false
+    description: Unused in CI (no real Set Webhook call is made).
+
+  - name: local_webhook_url
+    value: http://localhost:3300/telegram-webhook
+    enabled: true
+    secret: false
+    description: Where tests/bruno/webhook-test-server.ts listens during CI runs.
+
+  - name: chat_id
+    value: "555"
+    enabled: true
+    secret: false
+    description: Unused in CI — no Send Message call is made against local-webhook/.
+
+  - name: local_received_count_url
+    value: http://localhost:3300/received-count
+    enabled: true
+    secret: false
+    description: The CI test server's introspection endpoint.

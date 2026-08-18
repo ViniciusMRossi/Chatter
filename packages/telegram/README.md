@@ -131,3 +131,13 @@ Every HTTP endpoint this adapter touches — the outbound Telegram Bot API calls
 a runnable [Bruno](https://www.usebruno.com/) collection at
 [`bruno/telegram-adapter/`](../../bruno/telegram-adapter). See [`bruno/README.md`](../../bruno/README.md)
 for setup.
+
+The `local-webhook/` folder (dedup, direct/group mapping, secret validation — no real Telegram
+credentials needed) doubles as an automated test suite, run in CI and locally via:
+
+```bash
+pnpm run test:bruno
+```
+
+This starts a throwaway stub-backed server (`tests/bruno/webhook-test-server.ts`), runs the
+collection against it, then tears it down.

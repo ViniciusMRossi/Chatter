@@ -48,3 +48,13 @@ variables:
     description: |-
       A real Telegram chat ID (a DM with your bot, or a group it's in) to target
       with Send Message.
+
+  - name: local_received_count_url
+    value: http://localhost:3300/received-count
+    enabled: true
+    secret: false
+    description: |-
+      Only valid when local_webhook_url points at
+      tests/bruno/webhook-test-server.ts (the CI test server) rather than the
+      production example app — that's the only server exposing this
+      introspection endpoint. Used by the "Check Received Count" requests.

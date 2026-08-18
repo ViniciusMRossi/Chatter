@@ -6,15 +6,21 @@ info:
 environments:
   - name: Local
     file: environments/local.yml
+  - name: CI
+    file: environments/ci.yml
 
 docs: |-
   Documents the HTTP endpoints @chatter/telegram actually touches:
 
   - `telegram-bot-api/` — the outbound Telegram Bot API calls TelegramAccountAdapter
     makes internally (getMe, setWebhook, deleteWebhook, sendMessage), plus
-    getWebhookInfo for manual inspection. Requires a real bot token.
+    getWebhookInfo for manual inspection. Requires a real bot token. Not run in CI.
   - `local-webhook/` — synthetic inbound webhook deliveries targeting your own
     locally running webhook handler (e.g. example-apps/telegram-echo). Requires no
-    real Telegram bot or tunnel — these hit your own server directly.
+    real Telegram bot or tunnel — these hit your own server directly. Runs
+    automatically in CI against a stub-backed test server (see
+    packages/telegram/tests/bruno/webhook-test-server.ts and the `CI` environment).
 
-  See bruno/README.md for setup instructions.
+  Every request has a `tests` block — this collection is both documentation and
+  an automated (for local-webhook/) or human-run (for telegram-bot-api/) test
+  suite. See bruno/README.md for setup instructions.

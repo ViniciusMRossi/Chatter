@@ -18,6 +18,16 @@ http:
       }
   auth: none
 
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("webhook registered", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.ok).to.equal(true);
+          expect(res.body.result).to.equal(true);
+        });
+
 docs: |-
   Registers a webhook — what TelegramAccountAdapter.start() does automatically
   after Get Me succeeds. Useful for testing webhook registration in isolation

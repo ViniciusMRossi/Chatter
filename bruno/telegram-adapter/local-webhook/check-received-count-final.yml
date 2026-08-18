@@ -1,0 +1,24 @@
+info:
+  name: Check Received Count Final
+  type: http
+  seq: 8
+
+http:
+  method: GET
+  url: "{{local_received_count_url}}"
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("neither unauthenticated request was dispatched", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.count).to.equal(2);
+        });
+
+docs: |-
+  Only meaningful against `tests/bruno/webhook-test-server.ts` (see Check
+  Received Count After Direct for details). Still 2 — proves Missing Secret and
+  Wrong Secret never reached dispatch, matching
+  specs/002-telegram-adapter/spec.md Story 3.

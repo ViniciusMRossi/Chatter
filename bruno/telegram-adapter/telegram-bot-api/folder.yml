@@ -7,3 +7,7 @@ docs: |-
   The Bot API calls TelegramAccountAdapter makes internally, callable directly
   here for manual setup/debugging. Requires a real `bot_token` in the Local
   environment. See packages/telegram/README.md and MANUAL-VERIFICATION.md.
+
+  Each request has a `tests` block, so `bru run` against a real bot doubles as a
+  quick smoke test — but this folder is never run in CI (it needs a real,
+  authenticated bot). Only `local-webhook/` runs automatically.

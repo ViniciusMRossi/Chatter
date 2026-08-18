@@ -1,7 +1,7 @@
 info:
-  name: Direct Chat Message
+  name: Redelivered Direct Chat Message
   type: http
-  seq: 1
+  seq: 2
 
 http:
   method: POST
@@ -30,13 +30,14 @@ runtime:
   scripts:
     - type: tests
       code: |-
-        test("responds 200", function () {
+        test("still responds 200 (Telegram must not be told to retry)", function () {
           expect(res.status).to.equal(200);
         });
 
 docs: |-
-  Simulates Telegram delivering a direct (private-chat) text message. Expect
-  HTTP 200 and, if your app is wired to reply, an echo back to chat 555 recorded
-  by whatever's listening at local_webhook_url. Conversation type should map to
-  "direct" (chat.type "private" — see packages/telegram/src/mapping/
-  conversation.ts).
+  The exact same update_id (100001) as "Direct Chat Message" — simulates Telegram
+  redelivering an update (e.g. after a slow response). Expect HTTP 200, same as
+  the original delivery, but no second dispatch — see "Check Received Count
+  After Direct" next, which proves that via the test server's introspection
+  endpoint. This is the User Story 1 dedup mechanism from
+  specs/003-telegram-hardening/spec.md.

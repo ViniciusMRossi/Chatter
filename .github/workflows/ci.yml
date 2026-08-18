@@ -29,3 +29,24 @@ jobs:
 
       - name: Test
         run: pnpm run test
+
+  bruno-webhook-tests:
+    name: Bruno webhook contract tests (Telegram)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (produces dist/ the test server imports)
+        run: pnpm --filter @chatter/core --filter @chatter/telegram run typecheck
+
+      - name: Run Telegram webhook Bruno collection
+        run: pnpm --filter @chatter/telegram run test:bruno

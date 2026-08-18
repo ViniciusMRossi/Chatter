@@ -3,3 +3,4 @@ packages:
   - "example-apps/*"
 allowBuilds:
   esbuild: true
+  protobufjs: true

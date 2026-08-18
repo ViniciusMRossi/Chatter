@@ -1,7 +1,7 @@
 info:
   name: Group Chat Message
   type: http
-  seq: 2
+  seq: 4
 
 http:
   method: POST
@@ -25,6 +25,14 @@ http:
         }
       }
   auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("responds 200", function () {
+          expect(res.status).to.equal(200);
+        });
 
 docs: |-
   Simulates Telegram delivering a group (supergroup) text message — the same

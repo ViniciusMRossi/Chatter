@@ -18,6 +18,16 @@ http:
       }
   auth: none
 
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("message sent", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.ok).to.equal(true);
+          expect(res.body.result.message_id).to.be.a("number");
+        });
+
 docs: |-
   Sends a text message directly via the Bot API — what
   TelegramAccountAdapter.send() does internally (with `reply_parameters` added
