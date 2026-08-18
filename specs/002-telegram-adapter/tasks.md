@@ -54,25 +54,25 @@ transport test harness every user story below depends on.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 [P] Define `TelegramAccountConfig` (`botToken`, `webhookSecret`, `webhookUrl`) in
+- [X] T005 [P] Define `TelegramAccountConfig` (`botToken`, `webhookSecret`, `webhookUrl`) in
       `packages/telegram/src/config/telegram-account-config.ts`, per data-model.md.
-- [ ] T006 [P] Implement Telegram `chat.type` → `ConversationType` mapping and
+- [X] T006 [P] Implement Telegram `chat.type` → `ConversationType` mapping and
       Chat/User → `Conversation`/`Participant` mapping in
       `packages/telegram/src/mapping/{conversation,participant}.ts`, per data-model.md's mapping
       tables (`"private"`→`"direct"`, `"group"`/`"supergroup"`→`"group"`, else→`"unknown"`).
-- [ ] T007 [P] Implement Telegram `message` → `Message` mapping in
+- [X] T007 [P] Implement Telegram `message` → `Message` mapping in
       `packages/telegram/src/mapping/message.ts` (id, text, createdAt, replyToMessageId).
       Depends on: T006.
-- [ ] T008 Implement the Telegram error → `ChatterError` mapping function in
+- [X] T008 Implement the Telegram error → `ChatterError` mapping function in
       `packages/telegram/src/errors/map-telegram-error.ts` per research.md's mapping table
       (401→ChatterAuthenticationError, chat-not-found/blocked→ChatterInvalidTargetError,
       429→ChatterRateLimitError with `retryAfterMs`, network/5xx→ChatterProviderUnavailableError,
       else→ChatterUnknownError with `cause`), sanitizing the bot token out of any message it
       constructs.
-- [ ] T009 Build a stubbed grammY transport test harness (records outbound calls, returns canned
+- [X] T009 Build a stubbed grammY transport test harness (records outbound calls, returns canned
       success/error payloads) in `packages/telegram/tests/support/stub-transport.ts` — shared
       infrastructure every later test in this ticket uses to avoid real network calls.
-- [ ] T010 [P] Add `packages/telegram/src/index.ts` barrel export scaffold (re-exporting as each
+- [X] T010 [P] Add `packages/telegram/src/index.ts` barrel export scaffold (re-exporting as each
       piece below lands). Depends on: T005, T006, T007, T008.
 
 **Checkpoint**: Config, mapping, and error-translation logic compile and are exported; the test

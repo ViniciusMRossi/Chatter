@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@chatter/core": "workspace:*",
+    "@grammyjs/types": "^4.0.0",
     "grammy": "^1.30.0"
   },
   "devDependencies": {
