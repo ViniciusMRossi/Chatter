@@ -131,17 +131,17 @@ confirm conversation type `"group"`, with a reply routing back to the correct gr
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T018 [P] [US2] Write failing unit test: `chat.type: "group"` and `chat.type:
+- [X] T018 [P] [US2] Write failing unit test: `chat.type: "group"` and `chat.type:
       "supergroup"` both map to conversation type `"group"`, in
       `packages/telegram/tests/unit/mapping.spec.ts`.
-- [ ] T019 [P] [US2] Write failing integration test: a synthetic group-chat `Update` round-trips
+- [X] T019 [P] [US2] Write failing integration test: a synthetic group-chat `Update` round-trips
       through the same webhook handler and `send()` path as US1, with a conversation reference
       distinct from the US1 direct-chat one, in
       `packages/telegram/tests/integration/group-chat.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Verify/adjust the T006 conversation mapping and T013-T015 adapter/handler code
+- [X] T020 [US2] Verify/adjust the T006 conversation mapping and T013-T015 adapter/handler code
       handle group chats correctly with no group-specific branching beyond the mapping table
       itself, in `packages/telegram/src/mapping/conversation.ts`. Depends on: T006, T013, T015.
       Run `pnpm -r test` and confirm T018 and T019 pass.
