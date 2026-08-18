@@ -85,15 +85,15 @@ confirm the new chat ID is discoverable from the resulting failure.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T008 [P] [US2] Write failing unit test: a synthetic `GrammyError` with
+- [X] T008 [P] [US2] Write failing unit test: a synthetic `GrammyError` with
       `parameters.migrate_to_chat_id` set maps to a `ChatterInvalidTargetError` whose message
       contains the new chat ID, in `packages/telegram/tests/unit/errors.spec.ts`.
-- [ ] T009 [P] [US2] Write failing unit test (same file): a failure with no migration signal
+- [X] T009 [P] [US2] Write failing unit test (same file): a failure with no migration signal
       produces an error message that never mentions migration or a chat ID substitution.
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Extend `mapTelegramError` to check `error.parameters?.migrate_to_chat_id` and
+- [X] T010 [US2] Extend `mapTelegramError` to check `error.parameters?.migrate_to_chat_id` and
       include it in the `ChatterInvalidTargetError` message per research.md's wording, in
       `packages/telegram/src/errors/map-telegram-error.ts`. Run `pnpm -r test` and confirm T008
       and T009 pass.
