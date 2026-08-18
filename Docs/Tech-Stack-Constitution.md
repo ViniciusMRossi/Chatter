@@ -22,8 +22,10 @@ doesn't fit, they must propose an alternative and log it below **before** using 
   expose framework-independent handlers per FR-016; no Express/Fastify dependency in core.
 - Unit/integration testing: Vitest. Chosen for native ESM/TS support with no transpilation
   config, consistent with the ESM-only decision above.
-- Linting/formatting: TBD — propose ESLint + Prettier (or Biome as a single-tool alternative)
-  when Phase 1 tooling setup begins; log the actual choice here once decided.
+- Linting/formatting: ESLint (`typescript-eslint` strict + stylistic configs) + Prettier.
+  Decided during Phase 1 tooling setup: ESLint's type-aware rules catch more real bugs in a
+  strict-TS library than Biome's current TS support, and both tools are the most widely
+  understood default for TS library maintainers reviewing this code later.
 - E2E/UI testing: Magnitude (https://github.com/magnitudedev/browser-agent) — Apache-2.0,
   vision-first, has its own test runner + CI integration. Not expected to apply to Chatter
   itself (no UI), but available for example applications built on top of it.

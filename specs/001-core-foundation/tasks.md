@@ -30,24 +30,24 @@ plan.md Project Structure).
 
 **Purpose**: Workspace scaffolding — nothing story-specific yet.
 
-- [ ] T001 Create pnpm workspace scaffold: `pnpm-workspace.yaml`, root `package.json` (private,
+- [X] T001 Create pnpm workspace scaffold: `pnpm-workspace.yaml`, root `package.json` (private,
       no publish), `tsconfig.base.json` (strict mode, ESM/`NodeNext` resolution) at repo root;
       create empty `packages/core/` and `packages/testing/` directories. Note: `pnpm` must be on
       `PATH` (activate via `corepack enable && corepack prepare pnpm@latest --activate`, may
       need elevated permission on this machine — see Docs/handoff.md if it was flagged there).
-- [ ] T002 [P] Configure `packages/core/package.json` (`"name": "@chatter/core"`, `"type":
+- [X] T002 [P] Configure `packages/core/package.json` (`"name": "@chatter/core"`, `"type":
       "module"`, `"private": true` for now) and `packages/core/tsconfig.json` extending
       `tsconfig.base.json`.
-- [ ] T003 [P] Configure `packages/testing/package.json` (`"name": "@chatter/testing"`,
+- [X] T003 [P] Configure `packages/testing/package.json` (`"name": "@chatter/testing"`,
       `"type": "module"`, depends on `@chatter/core` via the `workspace:*` protocol) and
       `packages/testing/tsconfig.json` extending `tsconfig.base.json`.
-- [ ] T004 [P] Configure Vitest for both packages (`packages/core/vitest.config.ts`,
+- [X] T004 [P] Configure Vitest for both packages (`packages/core/vitest.config.ts`,
       `packages/testing/vitest.config.ts`, or a single `vitest.workspace.ts` at repo root —
       per research.md's Testing decision).
-- [ ] T005 [P] Choose and document linting/formatting tooling: replace the "TBD" line in
+- [X] T005 [P] Choose and document linting/formatting tooling: replace the "TBD" line in
       `Docs/Tech-Stack-Constitution.md` with the actual choice (ESLint + Prettier, or Biome),
       then add the corresponding root-level config file(s).
-- [ ] T006 [P] Add `.github/workflows/ci.yml` running `pnpm install`, typecheck, lint, and test
+- [X] T006 [P] Add `.github/workflows/ci.yml` running `pnpm install`, typecheck, lint, and test
       across the workspace on every PR, alongside the existing
       `.github/workflows/tier1-security.yml`.
 
@@ -62,24 +62,24 @@ depends on. No user story can start before this phase is done.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T007 [P] Define reference-key types (`AccountKey`, `ParticipantKey`, `ConversationKey`,
+- [X] T007 [P] Define reference-key types (`AccountKey`, `ParticipantKey`, `ConversationKey`,
       `ThreadKey`, composed exactly as in data-model.md "Reference keys") in
       `packages/core/src/types/ids.ts`.
-- [ ] T008 [P] Define domain types — `Provider`, `Account`, `Participant`, `Conversation`
+- [X] T008 [P] Define domain types — `Provider`, `Account`, `Participant`, `Conversation`
       (with `type: "direct" | "group" | "channel" | "unknown"`), `Message`,
       `MessageCreatedEvent`, `Capability` (`"text" | "reply" | "thread"`), `DeliveryResult` — per
       data-model.md, in `packages/core/src/types/{provider,account,participant,conversation,
       message,event,capability,delivery-result}.ts`.
-- [ ] T009 [P] Implement the `ChatterError` hierarchy (`ChatterError` abstract base +
+- [X] T009 [P] Implement the `ChatterError` hierarchy (`ChatterError` abstract base +
       `ChatterConfigurationError`, `ChatterAuthenticationError`, `ChatterAuthorizationError`,
       `ChatterRateLimitError` (with `retryable`, `retryAfterMs?`),
       `ChatterInvalidTargetError`, `ChatterUnsupportedCapabilityError`,
       `ChatterProviderUnavailableError` (with `retryable`), `ChatterUnknownError`) per
       research.md, in `packages/core/src/errors/*.ts`.
-- [ ] T010 Define the `AccountAdapter` contract interface (`provider`, `getCapabilities()`,
+- [X] T010 Define the `AccountAdapter` contract interface (`provider`, `getCapabilities()`,
       `start(dispatch)`, `stop()`, `send(input)`) per contracts/core-api.md, in
       `packages/core/src/adapter/adapter.ts`. Depends on: T007, T008, T009.
-- [ ] T011 Implement `packages/core/src/index.ts` barrel export of all public types, errors, and
+- [X] T011 Implement `packages/core/src/index.ts` barrel export of all public types, errors, and
       the adapter interface. Depends on: T007, T008, T009, T010.
 
 **Checkpoint**: Foundation ready — type model, errors, and the adapter contract compile and are
@@ -99,29 +99,29 @@ exactly the expected echo reply.
 
 > Write these tests FIRST, and confirm they fail before implementing.
 
-- [ ] T012 [P] [US1] Write failing unit test for `Chatter` start/stop lifecycle (start is
+- [X] T012 [P] [US1] Write failing unit test for `Chatter` start/stop lifecycle (start is
       idempotent, stop is idempotent, `send()` before `start()` or after `stop()` rejects with
       `ChatterConfigurationError`) in `packages/core/tests/unit/lifecycle.spec.ts`.
-- [ ] T013 [P] [US1] Write failing integration test for the full send/receive round trip
+- [X] T013 [P] [US1] Write failing integration test for the full send/receive round trip
       (register one fake account, start, emit an inbound message, handler sends a reply,
       assert the delivery result shape) in
       `packages/core/tests/integration/round-trip.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Implement `FakeAccountAdapter` (`start`, `stop`, `send`, `getCapabilities`,
+- [X] T014 [US1] Implement `FakeAccountAdapter` (`start`, `stop`, `send`, `getCapabilities`,
       plus test helpers `emitInbound` and `sentMessages`) implementing the `AccountAdapter`
       contract, in `packages/testing/src/fake-account/fake-account-adapter.ts`. Depends on:
       T010.
-- [ ] T015 [US1] Implement the `Chatter` orchestrator's constructor, `start()`/`stop()`
+- [X] T015 [US1] Implement the `Chatter` orchestrator's constructor, `start()`/`stop()`
       lifecycle, and `EventEmitter`-backed `on()`/`off()` inbound dispatch (per research.md's
       event-delivery decision), including minimal structured lifecycle/inbound observability
       events (NFR-008), in `packages/core/src/orchestrator/chatter.ts`. Depends on: T010, T014.
-- [ ] T016 [US1] Implement `Chatter.send()` outbound routing to the correct adapter, returning a
+- [X] T016 [US1] Implement `Chatter.send()` outbound routing to the correct adapter, returning a
       typed `DeliveryResult`, including minimal outbound/error observability events (NFR-008),
       in `packages/core/src/orchestrator/chatter.ts`. Depends on: T015.
-- [ ] T017 [P] [US1] Add `packages/testing/src/index.ts` barrel export. Depends on: T014.
-- [ ] T018 [US1] Run `pnpm -r test` and confirm T012 and T013 now pass.
+- [X] T017 [P] [US1] Add `packages/testing/src/index.ts` barrel export. Depends on: T014.
+- [X] T018 [US1] Run `pnpm -r test` and confirm T012 and T013 now pass.
 
 **Checkpoint**: User Story 1 fully functional and independently testable — this is the MVP.
 
@@ -137,20 +137,20 @@ inbound messages, verified per-account attribution.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T019 [P] [US2] Write failing unit test: registering two accounts under the same
+- [X] T019 [P] [US2] Write failing unit test: registering two accounts under the same
       `accountName` throws `ChatterConfigurationError` synchronously at construction, in
       `packages/core/tests/unit/registration.spec.ts`.
-- [ ] T020 [P] [US2] Write failing integration test: two fake accounts, one inbound message
+- [X] T020 [P] [US2] Write failing integration test: two fake accounts, one inbound message
       each, confirm each event reports the correct `account`, and a reply sent "from" one
       account never appears in the other's `sentMessages`, in
       `packages/core/tests/integration/multi-account.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Implement `accountName` uniqueness validation in the `Chatter` constructor
+- [X] T021 [US2] Implement `accountName` uniqueness validation in the `Chatter` constructor
       (throwing `ChatterConfigurationError`) in `packages/core/src/orchestrator/chatter.ts`.
       Depends on: T015.
-- [ ] T022 [US2] Confirm/adjust per-account tagging on inbound event dispatch and outbound send
+- [X] T022 [US2] Confirm/adjust per-account tagging on inbound event dispatch and outbound send
       routing so accounts are fully isolated, in `packages/core/src/orchestrator/chatter.ts`.
       Depends on: T021. Run `pnpm -r test` and confirm T019 and T020 pass.
 
@@ -168,28 +168,28 @@ expected error subclass.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T023 [P] [US3] Write failing unit test: `Chatter.getCapabilities(accountName)` reflects
+- [X] T023 [P] [US3] Write failing unit test: `Chatter.getCapabilities(accountName)` reflects
       the fake account's declared capability set, in
       `packages/core/tests/unit/capabilities.spec.ts`.
-- [ ] T024 [P] [US3] Write failing unit test: a thread-targeted send on an account constructed
+- [X] T024 [P] [US3] Write failing unit test: a thread-targeted send on an account constructed
       without the `"thread"` capability rejects with `ChatterUnsupportedCapabilityError`, in
       `packages/core/tests/unit/capabilities.spec.ts`.
-- [ ] T025 [P] [US3] Write failing unit test: a send targeting an unrecognized conversation/
+- [X] T025 [P] [US3] Write failing unit test: a send targeting an unrecognized conversation/
       message reference rejects with `ChatterInvalidTargetError`, in
       `packages/core/tests/unit/errors.spec.ts`.
-- [ ] T026 [P] [US3] Write failing unit test: after calling `FakeAccountAdapter.
+- [X] T026 [P] [US3] Write failing unit test: after calling `FakeAccountAdapter.
       simulateRateLimit(retryAfterMs)`, the next `send()` rejects with `ChatterRateLimitError`
       exposing `retryable: true` and the given `retryAfterMs`, in
       `packages/testing/tests/fake-account.spec.ts`.
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Implement capability-aware validation (unsupported-capability and
+- [X] T027 [US3] Implement capability-aware validation (unsupported-capability and
       invalid-target checks) in `FakeAccountAdapter.send()` and confirm `Chatter.send()`
       propagates the resulting typed errors unchanged, in
       `packages/testing/src/fake-account/fake-account-adapter.ts` and
       `packages/core/src/orchestrator/chatter.ts`. Depends on: T016, T014.
-- [ ] T028 [US3] Implement `FakeAccountAdapter.simulateRateLimit()` in
+- [X] T028 [US3] Implement `FakeAccountAdapter.simulateRateLimit()` in
       `packages/testing/src/fake-account/fake-account-adapter.ts`. Depends on: T014. Run
       `pnpm -r test` and confirm T023–T026 pass.
 
@@ -207,14 +207,14 @@ fails with a clear assertion, revert.
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Implement `runAccountConformanceSuite(createAdapter)` — covering capability
+- [X] T029 [US4] Implement `runAccountConformanceSuite(createAdapter)` — covering capability
       query, send + delivery-result shape, invalid-target rejection, unsupported-capability
       rejection, and start/stop idempotency — per contracts/core-api.md, in
       `packages/testing/src/conformance/conformance-suite.ts`. Depends on: T010, T014, T027,
       T028.
-- [ ] T030 [P] [US4] Add `packages/testing/tests/conformance.spec.ts` calling
+- [X] T030 [P] [US4] Add `packages/testing/tests/conformance.spec.ts` calling
       `runAccountConformanceSuite(() => new FakeAccountAdapter())`. Depends on: T029.
-- [ ] T031 [US4] Manually verify failure detection per quickstart.md §6: temporarily remove
+- [X] T031 [US4] Manually verify failure detection per quickstart.md §6: temporarily remove
       `conversation` from `FakeAccountAdapter.send()`'s returned `DeliveryResult`, re-run
       `pnpm -r test`, confirm `runAccountConformanceSuite` fails with a clear assertion, then
       revert the change. Record the confirmation in the pull request description. Depends on:
@@ -228,11 +228,11 @@ fails with a clear assertion, revert.
 
 **Purpose**: Documentation and final verification, once every story above is done.
 
-- [ ] T032 [P] Write `packages/core/README.md` and `packages/testing/README.md` (setup,
+- [X] T032 [P] Write `packages/core/README.md` and `packages/testing/README.md` (setup,
       minimal usage example, link to the public API contract) per NFR-011.
-- [ ] T033 [P] Walk through quickstart.md end-to-end manually and fix any discrepancy found
+- [X] T033 [P] Walk through quickstart.md end-to-end manually and fix any discrepancy found
       between the documented steps and actual behavior.
-- [ ] T034 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm the CI
+- [X] T034 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm the CI
       workflow from T006 will pass before opening the pull request.
 
 ---

@@ -1,0 +1,48 @@
+# @chatter/core
+
+Normalized types, the `AccountAdapter` contract, the `Chatter` orchestrator, typed errors, and
+delivery results for [Chatter](../../README.md) — a transport-only library for receiving and
+sending messages across messaging platforms without provider-specific logic in your application.
+
+This package has no provider SDKs and makes no network calls itself. It only defines the shared
+contract every provider adapter (starting with `@chatter/testing`'s fake adapter, and later real
+adapters like Telegram) implements.
+
+## Install
+
+```bash
+pnpm add @chatter/core
+```
+
+## Minimal example
+
+```ts
+import { Chatter } from "@chatter/core";
+import { FakeAccountAdapter } from "@chatter/testing";
+
+const chatter = new Chatter({
+  accounts: [{ accountName: "support-bot", adapter: new FakeAccountAdapter() }],
+});
+
+chatter.on("message.created", async (event) => {
+  await chatter.send({
+    account: event.account,
+    conversation: event.message.conversation,
+    text: `echo: ${event.message.text}`,
+    replyToMessageId: event.message.id,
+  });
+});
+
+await chatter.start();
+```
+
+See `specs/001-core-foundation/quickstart.md` in the repo root for a fuller walkthrough, and
+`specs/001-core-foundation/contracts/core-api.md` for the full public API contract.
+
+## Testing this package
+
+Test files that need `Chatter` or the typed errors must import them via the package name
+(`"@chatter/core"`), not a relative path into `src/`. `@chatter/testing`'s `FakeAccountAdapter`
+imports these classes via the package name too — importing via a relative path instead gives you
+a second, distinct module instance of the same class, and `instanceof` checks between the two
+will silently fail even though the code is identical.
