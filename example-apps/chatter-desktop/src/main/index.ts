@@ -354,11 +354,11 @@ function createWindow(): void {
   });
   // Forwards renderer-side console.log/error/warn (and any uncaught script error, which
   // Chromium also reports here) to this process's own terminal — this is a debugging aid
-  // for a test client, not something a production app would normally do.
+  // for a test client, not something a production app would normally do. Unlike an open
+  // DevTools window, this is silent until something actually logs.
   mainWindow.webContents.on("console-message", (event) => {
     console.log(`[renderer:${event.level}] ${event.message} (${event.sourceId}:${String(event.lineNumber)})`);
   });
-  mainWindow.webContents.openDevTools({ mode: "detach" });
   mainWindow.loadFile(join(__dirname, "../renderer/index.html")).catch((error: unknown) => {
     console.error("Failed to load renderer", error);
   });
