@@ -20,9 +20,10 @@ roadmap exit criterion.
 
 **Language/Version**: TypeScript (strict mode) on Node.js active LTS — unchanged from ticket #1.
 
-**Primary Dependencies**: `grammy` (Telegram Bot API client + typed Update payloads + framework-
-neutral `webhookCallback()` helper). `@chatter/core` as a workspace dependency (the contract this
-adapter implements). No other new runtime dependencies.
+**Primary Dependencies**: `grammy` — its standalone `Api` client (typed Bot API method calls) and
+`@grammyjs/types`' `Update`/`Message`/`Chat`/`User` types; see research.md for why the `Bot`/
+`Composer`/`webhookCallback` middleware stack is not used. `@chatter/core` as a workspace
+dependency (the contract this adapter implements). No other new runtime dependencies.
 
 **Storage**: N/A — no persistence, consistent with constitution Principle VI. Bot token and
 webhook secret live only in the adapter instance's memory for the process lifetime.
@@ -100,7 +101,7 @@ packages/
     │   │                    # Participant mapping; chat.type -> ConversationType mapping
     │   ├── errors/          # Telegram Bot API error -> ChatterError subclass mapping
     │   ├── webhook/          # secret-token validation + Request -> Response handler,
-    │   │                    # wrapping grammY's webhookCallback()
+    │   │                    # parsing the Update body directly (see research.md)
     │   ├── adapter/          # TelegramAccountAdapter implementing @chatter/core's
     │   │                    # AccountAdapter (start/stop/send/getCapabilities)
     │   └── index.ts          # public package entrypoint (barrel export)
