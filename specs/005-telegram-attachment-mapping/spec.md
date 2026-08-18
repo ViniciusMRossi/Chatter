@@ -118,6 +118,11 @@ attachment will still be downloadable a few minutes vs. a few hours later.
    is temporary and describes the practical implication (a large file accepted on the way in may
    not be re-downloadable through this reference at all, and any reference expires well before
    most applications would expect).
+3. **Given** the adapter's documentation, **When** a developer looks up whether a received
+   attachment's download reference is safe to log, display in a debugging tool, or otherwise
+   treat as non-sensitive, **Then** the documentation correctly warns that it is not — Telegram's
+   own download mechanism embeds the bot's credential in the reference itself, so it must be
+   handled with the same care as a secret, not as an ordinary public URL.
 
 ---
 
@@ -182,6 +187,11 @@ confirms success or gets an actionable failure.
 - What happens when a single update carries both a caption-less document and no other content?
   (Same as any other caption-less media — a valid attachment-only message, no different handling
   needed.)
+- What happens if a received attachment's download reference is inadvertently logged or exposed
+  by the host application? (Out of the adapter's control once handed to application code, but the
+  adapter's own documentation must make the risk unmistakable per FR-012 — this is a real
+  consequence of how Telegram's file-download mechanism works, not a flaw specific to this
+  adapter's implementation.)
 
 ## Requirements *(mandatory)*
 
@@ -213,6 +223,9 @@ confirms success or gets an actionable failure.
   temporary and not guaranteed to remain valid indefinitely — including the specific case where
   a large received file may not be re-downloadable through this adapter at all, regardless of
   how it was originally sent.
+- **FR-012**: The adapter's documentation MUST state that a received attachment's download
+  reference must be handled as sensitive — it is not an ordinary, shareable public URL — because
+  Telegram's own download mechanism embeds the bot's credential in it.
 - **FR-010**: The shared, adapter-agnostic conformance suite MUST be exercised against this
   adapter with attachment support enabled, so its attachment-related checks validate genuine
   send behavior rather than being inapplicable to this adapter, without weakening or bypassing
