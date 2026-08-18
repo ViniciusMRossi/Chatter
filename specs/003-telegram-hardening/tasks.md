@@ -177,12 +177,12 @@ produces an actionable failure.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T018 [P] Update `packages/telegram/README.md`: document the dedup window's bound and
+- [X] T018 [P] Update `packages/telegram/README.md`: document the dedup window's bound and
       non-durability, migration-ID surfacing, the 4096-character limit, the `onNonFatalError`
       option, and link to `MANUAL-VERIFICATION.md`.
-- [ ] T019 [P] Re-run `@chatter/testing`'s `runAccountConformanceSuite` (via the existing,
+- [X] T019 [P] Re-run `@chatter/testing`'s `runAccountConformanceSuite` (via the existing,
       unmodified `packages/telegram/tests/conformance.spec.ts`) to confirm no regression (SC-005).
-- [ ] T020 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
+- [X] T020 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
       pass before opening the pull request.
 
 ---

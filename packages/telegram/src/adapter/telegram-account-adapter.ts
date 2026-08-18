@@ -42,9 +42,11 @@ export class TelegramAccountAdapter implements AccountAdapter {
   constructor(config: TelegramAccountConfig, options?: TelegramAccountAdapterOptions) {
     this.#config = config;
     this.#api = options?.api ?? new Api(config.botToken);
-    this.#onNonFatalError = options?.onNonFatalError ?? ((message) => {
-      console.error(message);
-    });
+    this.#onNonFatalError =
+      options?.onNonFatalError ??
+      ((message) => {
+        console.error(message);
+      });
   }
 
   getCapabilities(): ReadonlySet<Capability> {

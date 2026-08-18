@@ -79,8 +79,47 @@ Telegram Bot API failures are mapped onto `@chatter/core`'s typed error hierarch
 |---|---|
 | Invalid/revoked bot token | `ChatterAuthenticationError` |
 | Unknown chat, or bot blocked/kicked | `ChatterInvalidTargetError` |
+| Group chat migrated to a supergroup | `ChatterInvalidTargetError` — new chat ID included in the message text (no structured field; see below) |
+| Outbound text over 4096 characters | `ChatterConfigurationError` — rejected before any API call |
 | Flood control (rate limit) | `ChatterRateLimitError` (with `retryAfterMs`) |
 | Network failure / Telegram outage | `ChatterProviderUnavailableError` (`retryable: true`) |
 | Anything else | `ChatterUnknownError` |
 
 The bot token and webhook secret never appear in any thrown error's message, at any point.
+
+## Duplicate webhook deliveries
+
+Telegram occasionally redelivers the same update (e.g. if your server's response was slow).
+This adapter tracks the last 1000 processed `update_id`s in memory and skips dispatching a
+redelivered one a second time (the request is still acknowledged with `200` either way, so
+Telegram doesn't keep retrying). This is a best-effort, non-durable reduction of a known,
+common redelivery pattern — not a durable exactly-once guarantee. If your application needs
+stronger deduplication (e.g. across restarts), track message IDs yourself; this mirrors
+`@chatter/core`'s own stance that durable deduplication is an application concern.
+
+## Chat migration (group → supergroup)
+
+Telegram silently changes a group's chat ID when it's upgraded to a supergroup. A send to the
+old ID fails; this adapter surfaces the new chat ID in the resulting `ChatterInvalidTargetError`'s
+message (e.g. `"...new chat ID: -1001234567890"`) so your application can update its stored
+reference and retry. There's no structured field for this yet — parse the message if you need
+to automate the reaction.
+
+## Non-fatal cleanup failures
+
+`stop()` always resolves without throwing, even if removing the webhook registration
+(`deleteWebhook`) fails — but that failure isn't silently discarded. Pass `onNonFatalError` to
+the constructor to observe it (receives a pre-sanitized message string, never the raw error or
+either secret); if you don't provide one, it defaults to `console.error`:
+
+```ts
+const adapter = new TelegramAccountAdapter(config, {
+  onNonFatalError: (message) => logger.warn({ message }, "telegram adapter cleanup issue"),
+});
+```
+
+## Verifying against a real bot
+
+The automated test suite runs entirely against a stubbed transport (no real Telegram
+credentials, ever, in CI). See `MANUAL-VERIFICATION.md` for the human-run checklist that proves
+this adapter actually works against Telegram's real servers.

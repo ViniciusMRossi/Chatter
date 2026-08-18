@@ -15,7 +15,11 @@ describe("stop() cleanup failure handling", () => {
     });
     const onNonFatalError = vi.fn();
     const adapter = new TelegramAccountAdapter(
-      { botToken: BOT_TOKEN, webhookSecret: WEBHOOK_SECRET, webhookUrl: "https://example.com/telegram-webhook" },
+      {
+        botToken: BOT_TOKEN,
+        webhookSecret: WEBHOOK_SECRET,
+        webhookUrl: "https://example.com/telegram-webhook",
+      },
       { api: transport.api, onNonFatalError },
     );
     await adapter.start(() => {
@@ -35,7 +39,11 @@ describe("stop() cleanup failure handling", () => {
     });
     const onNonFatalError = vi.fn();
     const adapter = new TelegramAccountAdapter(
-      { botToken: BOT_TOKEN, webhookSecret: WEBHOOK_SECRET, webhookUrl: "https://example.com/telegram-webhook" },
+      {
+        botToken: BOT_TOKEN,
+        webhookSecret: WEBHOOK_SECRET,
+        webhookUrl: "https://example.com/telegram-webhook",
+      },
       { api: transport.api, onNonFatalError },
     );
     await adapter.start(() => {
