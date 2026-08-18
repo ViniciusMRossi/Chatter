@@ -28,7 +28,11 @@ function buildAdapter(transport: StubTelegramTransport): TelegramAccountAdapter 
 describe("Telegram error mapping", () => {
   it("maps a 401 Unauthorized response to ChatterAuthenticationError", async () => {
     const transport = new StubTelegramTransport();
-    transport.queueError("sendMessage", { ok: false, error_code: 401, description: "Unauthorized" });
+    transport.queueError("sendMessage", {
+      ok: false,
+      error_code: 401,
+      description: "Unauthorized",
+    });
     const adapter = buildAdapter(transport);
 
     await expect(

@@ -32,13 +32,11 @@ export class StubTelegramTransport {
     this.api = new Api(botToken);
     // A stub transformer necessarily loses grammY's per-method generic specificity — it
     // handles every method the same way. This is test-only infrastructure, not shipped code.
-    const stubTransformer = (
-      (_prev: unknown, method: string, payload: unknown) => {
-        const recordedPayload = (payload ?? {}) as Record<string, unknown>;
-        this.calls.push({ method, payload: recordedPayload });
-        return Promise.resolve(this.#respond(method, recordedPayload));
-      }
-    ) as unknown as Transformer;
+    const stubTransformer = ((_prev: unknown, method: string, payload: unknown) => {
+      const recordedPayload = (payload ?? {}) as Record<string, unknown>;
+      this.calls.push({ method, payload: recordedPayload });
+      return Promise.resolve(this.#respond(method, recordedPayload));
+    }) as unknown as Transformer;
     this.api.config.use(stubTransformer);
   }
 

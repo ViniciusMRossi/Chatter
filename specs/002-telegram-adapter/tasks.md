@@ -253,19 +253,19 @@ with no `TELEGRAM_*` environment variables set.
 **Purpose**: Documentation, the example app, and final verification, once every story above is
 done.
 
-- [ ] T034 [P] Write `packages/telegram/README.md`: BotFather bot creation, obtaining a token,
+- [X] T034 [P] Write `packages/telegram/README.md`: BotFather bot creation, obtaining a token,
       webhook setup (including local-tunnel guidance), required permissions, supported
       capabilities, and known limitations, per FR-011/NFR-011.
-- [ ] T035 [P] Build `example-apps/telegram-echo/src/index.ts` (the same handler shape as
+- [X] T035 [P] Build `example-apps/telegram-echo/src/index.ts` (the same handler shape as
       ticket #1's illustrative example, wired to `@chatter/telegram`, with a minimal Node `http`
       server exposing the webhook handler) and `example-apps/telegram-echo/README.md` (how to
       run it against a real bot + tunnel), per FR-012 and quickstart.md's manual-validation
       section.
-- [ ] T036 [P] Walk through quickstart.md's automated section end-to-end, and check the manual
+- [X] T036 [P] Walk through quickstart.md's automated section end-to-end, and check the manual
       section's commands/instructions are internally consistent with the actual example app and
       adapter code (a real Telegram bot isn't available in this environment, so the manual tier
       is a documentation-consistency check here, not a live run).
-- [ ] T037 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
+- [X] T037 Run `pnpm -r typecheck && pnpm -r lint && pnpm -r test` locally to confirm CI will
       pass before opening the pull request.
 
 ---

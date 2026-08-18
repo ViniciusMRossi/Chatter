@@ -48,7 +48,9 @@ runAccountConformanceSuite({
       }),
     );
     if (response.status !== 200) {
-      throw new Error(`expected the seed webhook delivery to succeed, got ${String(response.status)}`);
+      throw new Error(
+        `expected the seed webhook delivery to succeed, got ${String(response.status)}`,
+      );
     }
 
     const botUserId = telegramAdapter.botUserId;
