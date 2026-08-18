@@ -1,5 +1,6 @@
 import {
   ChatterAuthenticationError,
+  ChatterConfigurationError,
   ChatterUnsupportedCapabilityError,
   type AccountAdapter,
   type AdapterDeliveryResult,
@@ -14,6 +15,8 @@ import { UpdateDedupWindow } from "../dedup/update-dedup-window.js";
 import { mapTelegramError } from "../errors/map-telegram-error.js";
 
 const CAPABILITIES: ReadonlySet<Capability> = new Set(["text", "reply"]);
+/** Telegram's documented per-message text limit (characters). */
+const TELEGRAM_TEXT_LIMIT = 4096;
 
 export interface TelegramAccountAdapterOptions {
   /** Injectable for testing — defaults to a real grammY `Api` client. */
@@ -85,6 +88,11 @@ export class TelegramAccountAdapter implements AccountAdapter {
       // dropping the thread target and sending to the wrong place.
       throw new ChatterUnsupportedCapabilityError(
         "this Telegram adapter does not support thread-targeted sends",
+      );
+    }
+    if (input.text.length > TELEGRAM_TEXT_LIMIT) {
+      throw new ChatterConfigurationError(
+        `Telegram message text exceeds the ${String(TELEGRAM_TEXT_LIMIT)}-character limit (got ${String(input.text.length)} characters)`,
       );
     }
 

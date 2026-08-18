@@ -112,15 +112,15 @@ recorded by the stub transport.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T011 [P] [US3] Write failing unit test: `send()` with text over 4096 characters rejects
+- [X] T011 [P] [US3] Write failing unit test: `send()` with text over 4096 characters rejects
       with `ChatterConfigurationError`, and the stub transport records zero calls, in
       `packages/telegram/tests/unit/send-validation.spec.ts`.
-- [ ] T012 [P] [US3] Write failing unit test (same file): `send()` with text at exactly 4096
+- [X] T012 [P] [US3] Write failing unit test (same file): `send()` with text at exactly 4096
       characters succeeds normally (the limit is inclusive).
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Add the length pre-validation to `TelegramAccountAdapter.send()`, before any
+- [X] T013 [US3] Add the length pre-validation to `TelegramAccountAdapter.send()`, before any
       API call, in `packages/telegram/src/adapter/telegram-account-adapter.ts`. Run
       `pnpm -r test` and confirm T011 and T012 pass.
 
