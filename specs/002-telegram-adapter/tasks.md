@@ -161,17 +161,17 @@ secret; confirm only the last one results in dispatch.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T021 [P] [US3] Write failing unit test: a webhook request with no secret header is
+- [X] T021 [P] [US3] Write failing unit test: a webhook request with no secret header is
       rejected (401-equivalent `Response`) and `dispatch` is never called, in
       `packages/telegram/tests/unit/webhook-security.spec.ts`.
-- [ ] T022 [P] [US3] Write failing unit test: a webhook request with an incorrect secret is
+- [X] T022 [P] [US3] Write failing unit test: a webhook request with an incorrect secret is
       rejected the same way, in the same file.
-- [ ] T023 [P] [US3] Write failing unit test: a webhook request with the correct secret is
+- [X] T023 [P] [US3] Write failing unit test: a webhook request with the correct secret is
       accepted and processed normally, in the same file.
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] Implement timing-safe secret validation (`crypto.timingSafeEqual`, handling the
+- [X] T024 [US3] Implement timing-safe secret validation (`crypto.timingSafeEqual`, handling the
       missing-header/length-mismatch case without calling it) as the first step of
       `createTelegramWebhookHandler()`, before any `Update` body parsing, in
       `packages/telegram/src/webhook/telegram-webhook-handler.ts`. Depends on: T015. Run
