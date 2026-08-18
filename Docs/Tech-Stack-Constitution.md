@@ -31,6 +31,16 @@ doesn't fit, they must propose an alternative and log it below **before** using 
   itself (no UI), but available for example applications built on top of it.
 - First provider adapter (Phase 2 vertical slice): Telegram — simplest bot model, no app-review
   gate, supports both direct and group conversations, per roadmap recommendation.
+- Telegram transport: webhook (not long polling). More production-realistic and exercises
+  FR-016's framework-independent webhook handler contract and NFR-004's signature/secret
+  validation requirement for this first real-network adapter. Requires a public HTTPS URL
+  (tunnel/ngrok) for local development against Telegram's real servers; the adapter conformance
+  suite and unit tests still require none.
+- Telegram SDK: grammY (https://grammy.dev) — Apache-2.0, TypeScript-native with strong typings
+  out of the box, actively maintained, ships its own framework-neutral webhook callback helpers
+  (reduces custom work for FR-016 compliance). Preferred over Telegraf's middleware-chain
+  abstraction (impedance mismatch with Chatter's own adapter contract) and over a raw
+  fetch-based Bot API client (would mean reimplementing typed responses and retry handling).
 - Tier 1 security (every PR, automated): Semgrep + gitleaks
 - Tier 2 security (major releases, manual trigger only): Shannon
   (https://github.com/KeygraphHQ/shannon) — whitebox, requires source access, ~$40-55/run in
