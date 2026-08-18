@@ -5,9 +5,9 @@ info:
 
 environments:
   - name: Local
-    file: environments/local.yml
+    file: environments/Local.yml
   - name: CI
-    file: environments/ci.yml
+    file: environments/CI.yml
 
 docs: |-
   Documents the HTTP endpoints @chatter/telegram actually touches:

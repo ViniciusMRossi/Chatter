@@ -25,7 +25,7 @@ following the same `<provider>-adapter/` pattern.
    provider's folder).
 3. Select the **Local** environment (top-right dropdown in the app).
 4. Fill in the secret variables (`bot_token`, `webhook_secret`) **inside the Bruno app itself**,
-   not by editing the committed `environments/local.yml` file — variables marked `secret: true`
+   not by editing the committed `environments/Local.yml` file — variables marked `secret: true`
    in that file are intentionally left blank; Bruno stores the values you enter locally, outside
    the synced collection, so they're never at risk of being committed.
 5. Fill in the non-secret variables (`public_webhook_url`, `local_webhook_url`, `chat_id`) to
