@@ -51,30 +51,37 @@ constructed once by an adapter (inbound) or an application (outbound) and never 
 
 ## `Message` (extended)
 
-Adds one new optional field to the existing type in `packages/core/src/types/message.ts`:
+Two changes to the existing type in `packages/core/src/types/message.ts`:
 
 ```ts
-readonly attachments?: readonly Attachment[];
+readonly text?: string;              // CHANGED — was required; see research.md
+readonly attachments?: readonly Attachment[]; // NEW
 ```
 
-- Omitted or empty array both mean "no attachments" — no semantic difference is assigned to one
-  vs. the other.
-- Every existing required/optional field on `Message` is unchanged (non-breaking addition, per
-  research.md).
+- Omitted or empty `attachments` array both mean "no attachments" — no semantic difference is
+  assigned to one vs. the other.
+- `text` narrowing from required to optional is a deliberate, acknowledged exception to this
+  ticket's otherwise non-breaking design (see research.md) — required to represent
+  attachment-only messages at all (FR-001).
+- Every other field on `Message` is unchanged.
 
 ## `SendInput` (extended)
 
-Adds one new optional field to the existing type in `packages/core/src/adapter/adapter.ts`:
+Two changes to the existing type in `packages/core/src/adapter/adapter.ts`:
 
 ```ts
-readonly attachment?: Attachment;
+readonly text?: string;         // CHANGED — was required; see research.md
+readonly attachment?: Attachment; // NEW
 ```
 
-- Singular — at most one per call (FR-004). Not an array; there is nothing to validate a "max
-  length of 1" against because the type itself only allows zero or one.
-- `text` remains optional and independent — `{ attachment }` alone (no `text`), `{ text }` alone
+- `attachment` is singular — at most one per call (FR-004). Not an array; there is nothing to
+  validate a "max length of 1" against because the type itself only allows zero or one.
+- `text` and `attachment` are independent — `{ attachment }` alone (no `text`), `{ text }` alone
   (no `attachment`), and `{ text, attachment }` are all valid, matching User Story 1 Scenario 2's
   "an attachment does not require a caption."
+- `packages/core/src/orchestrator/chatter.ts`'s `Chatter.send()` must forward `input.attachment`
+  (and now-optional `input.text`) into the `SendInput` it builds for the adapter — it does not
+  today (see research.md).
 
 ## `Capability` (extended)
 

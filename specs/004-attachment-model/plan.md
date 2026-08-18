@@ -39,10 +39,12 @@ the dispatch path).
 
 **Constraints**: No new `ChatterError` subclass (spec Requirements + constitution Principle V —
 reuse `ChatterUnsupportedCapabilityError` and `ChatterConfigurationError`, exactly as ticket #1
-and ticket #3 already established for their own capability/validation checks). No breaking
-change to any existing type — `Message.attachments` and `SendInput.attachment` are both
-optional, so every existing call site (ticket #1-#3's tests, the Telegram adapter, the example
-app) keeps compiling unchanged.
+and ticket #3 already established for their own capability/validation checks). `Message.attachments`
+and `SendInput.attachment` are both purely additive/optional. One deliberate exception to
+"no breaking change": `Message.text`/`SendInput.text` narrow from required to optional, since
+FR-001 requires attachment-only messages (no caption) to be representable — see research.md. This
+requires one mechanical compile-fix in `@chatter/telegram` (guarding a length check against
+`undefined`) to keep the monorepo type-checking; it adds no attachment behavior to Telegram.
 
 **Scale/Scope**: One new type file, three extended existing files in `@chatter/core`, and
 extensions to two existing files in `@chatter/testing`. No new files in the test-support sense —
@@ -90,11 +92,19 @@ packages/core/
 │   │   ├── capability.ts     # MODIFIED — Capability gains "attachments"
 │   │   └── index.ts          # MODIFIED — barrel export
 │   └── adapter/
-│       └── adapter.ts        # MODIFIED — SendInput.attachment?: Attachment
+│       └── adapter.ts        # MODIFIED — SendInput.text optional, SendInput.attachment?: Attachment
+├── src/orchestrator/
+│   └── chatter.ts             # MODIFIED — Chatter.send() forwards input.attachment (see research.md)
 ├── tests/
 │   ├── unit/                  # extended: attachment representation, capability value
 │   └── integration/            # extended: round trip with attachment via fake adapter
 └── src/index.ts               # MODIFIED — re-export Attachment types
+
+packages/telegram/
+└── src/adapter/
+    └── telegram-account-adapter.ts # MODIFIED (mechanical only) — guard the existing 4096-char
+                                     #   length check against input.text now being optional; NOT
+                                     #   an attachment implementation (see research.md)
 
 packages/testing/
 ├── src/

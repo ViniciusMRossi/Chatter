@@ -130,6 +130,39 @@ precisely (also an optional field with a permissive default). Gives conformance-
 this ticket's own unit tests a way to exercise FR-007 without needing a real provider's actual
 size limit.
 
+## Decision: `text` becomes optional on `Message` and `SendInput`
+
+**Decision**: `Message.text: string` becomes `Message.text?: string`, and `SendInput.text: string`
+becomes `SendInput.text?: string`.
+
+**Rationale**: Discovered while cross-checking the design against the actual current source
+(`packages/core/src/types/message.ts`, `packages/core/src/adapter/adapter.ts`): both fields are
+`string`-required today, which makes "attachment-only, no text" (FR-001, User Story 1 Scenario 2,
+User Story 2 Scenario 2's "no caption") structurally unrepresentable no matter what `Attachment`
+itself looks like. This was missed in the original spec-writing pass because neither ticket #1
+nor #2 had a reason to question a text-only model's text field being required. Fixing it is
+required to satisfy FR-001, not optional polish.
+
+**Consequences acknowledged**:
+- This is a genuine breaking change to `@chatter/core`'s public API (narrows what's guaranteed
+  about `message.text`/`input.text` for existing consumers), unlike every other change in this
+  ticket. It's accepted because FR-001 cannot be satisfied without it, and `@chatter/core` has not
+  yet reached a stable 1.0 (semver allows this pre-1.0; documented here rather than silently
+  glossed over).
+- `@chatter/telegram`'s `TelegramAccountAdapter.send()` currently does `input.text.length` (a
+  4096-character limit check, ticket #3) unconditionally — this stops compiling once `text` is
+  optional. Fixing this one line (guard for `undefined`, skip the length check when there's no
+  text) is a mechanical compile-fix required to keep the monorepo type-checking as a whole; it is
+  NOT attachment support in Telegram (Telegram still can't send or receive attachments after this
+  ticket) and does not touch `getCapabilities()` or any send/receive behavior beyond the text
+  guard itself. Tracked in tasks.md as an explicit, narrowly-scoped Polish task.
+- `Chatter.send()` (`packages/core/src/orchestrator/chatter.ts`) currently builds the adapter-facing
+  `SendInput` by hand, field by field, and does not yet forward an `attachment`. It must be
+  updated to pass `input.attachment` through (mirroring the existing conditional-spread pattern
+  already used there for `replyToMessageId`) — without this, `Chatter.send()` would silently drop
+  any attachment even though the type system allows passing one in. This file was missing from
+  plan.md's Project Structure section and has been added.
+
 ## Decision: Conformance suite extension shape
 
 **Decision**: `ConformanceSuiteConfig` (in `@chatter/testing`) gains one new required field:

@@ -26,23 +26,29 @@ interface Attachment {
   a separate type (see research.md).
 - Outbound attachments (`SendInput.attachment`) MAY use either source variant.
 
-## `Message` (extended, backward compatible)
+## `Message` (extended — NOT fully backward compatible, see note)
 
 ```ts
 interface Message {
-  // ... everything from ticket #1, unchanged ...
+  // ... everything from ticket #1, unchanged, EXCEPT: ...
+  readonly text?: string; // CHANGED — was `readonly text: string`
   readonly attachments?: readonly Attachment[]; // NEW — FR-001
 }
 ```
 
 - Omitted and empty-array both mean "no attachments" — no adapter is required to emit `[]`
   explicitly for a text-only message; omission remains valid, matching every existing call site.
+- `text` narrowing to optional IS a breaking change to `@chatter/core`'s public API — required so
+  an attachment-only message (no caption) is representable at all (FR-001, US1 Scenario 2). See
+  research.md for full rationale and the one downstream compile-fix it requires in
+  `@chatter/telegram`.
 
-## `SendInput` (extended, backward compatible)
+## `SendInput` (extended — NOT fully backward compatible, see note)
 
 ```ts
 interface SendInput {
-  // ... everything from ticket #1, unchanged ...
+  // ... everything from ticket #1, unchanged, EXCEPT: ...
+  readonly text?: string; // CHANGED — was `readonly text: string`
   readonly attachment?: Attachment; // NEW — FR-004, singular: at most one per call
 }
 ```
@@ -51,6 +57,14 @@ interface SendInput {
   is invalid only in the sense that at least one of `text`/`attachment` presumably carries the
   message's content; this ticket does not add a runtime check requiring at least one, since a
   message with neither was already representable (and not disallowed) before this ticket.
+
+## `Chatter.send()` (behavior extended, signature unchanged)
+
+`packages/core/src/orchestrator/chatter.ts` currently builds the adapter-facing `SendInput`
+field-by-field and does not forward `attachment`. It MUST be updated to pass `input.attachment`
+through (same conditional-inclusion style already used there for `replyToMessageId`), otherwise a
+caller-supplied attachment would silently never reach the adapter despite the type system
+allowing it.
 
 ## `Capability` (extended, backward compatible)
 
