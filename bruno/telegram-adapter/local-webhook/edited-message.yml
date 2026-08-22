@@ -1,0 +1,55 @@
+info:
+  name: Edited Message
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100900,
+        "edited_message": {
+          "message_id": 900,
+          "date": 1700000000,
+          "edit_date": 1700000300,
+          "chat": { "id": 555, "type": "private", "first_name": "Ada" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "text": "corrected @alice",
+          "entities": [
+            { "type": "mention", "offset": 10, "length": 6 }
+          ]
+        }
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("an edited_message update is accepted", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  Telegram delivers an edit as its own update type, `edited_message`, carrying the
+  message in its edited state — not a diff, and not the previous content.
+
+  This update deliberately references a message the collection never delivered as a
+  `message` update. That is not an oversight: FR-011 requires an edit to be
+  dispatched even when the application never saw the original (it may have started
+  after the message was sent), and it must not require prior state to make sense of
+  one.
+
+  `date` and `edit_date` are both present and different. The first is when the
+  message was originally sent and must survive the edit untouched; the second is
+  what becomes `Message.editedAt`.
+
+  The status code proves almost nothing here — see Check Last Message Is An Edit,
+  where this is actually verified.

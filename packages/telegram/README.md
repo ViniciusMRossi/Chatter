@@ -205,6 +205,76 @@ const adapter = new TelegramAccountAdapter(config, {
 });
 ```
 
+## Message edits and deletions
+
+This adapter declares `"editNotifications"`, `"editMessage"` and `"deleteMessage"`. See
+[`@chatter/core`'s README](../core/README.md#message-edits-and-deletions) for the normalized
+model; the Telegram-specific behavior is below.
+
+### Inbound edits
+
+`edited_message` updates dispatch as `"message.edited"`, carrying the message's content as of
+the edit under the same id it was first delivered with. `edit_date` becomes `Message.editedAt`;
+`date` continues to supply `createdAt` and is never overwritten.
+
+Mentions are recomputed from the edited message, so an edit that adds or removes a mention is
+reflected — including reporting no `mentions` key at all when an edit removed the only one. The
+`entities`/`caption_entities` rule is unchanged from mentions: both are chosen by the same
+branch that chooses text vs caption.
+
+`edited_channel_post` is **not** handled, because inbound `channel_post` is not handled either —
+an edit of one would be an edit of a message this adapter never delivered. Channel posts are
+their own feature.
+
+Redelivered edits are suppressed by the existing `update_id` dedup window, which runs before any
+update-type branching.
+
+### Editing costs one round trip for text, two for a caption
+
+Telegram has separate endpoints for the two, and this adapter picks by **asking**, not assuming:
+it calls `editMessageText`, and only on Telegram's specific
+`there is no text in the message to edit` does it retry with `editMessageCaption`.
+
+It has to work this way. Chatter keeps no record of the messages it has sent, and the Bot API
+gives bots no way to fetch a message by id — so the provider is the only available source of
+truth about which field a message has. Editing a caption therefore costs two calls. Editing
+text, the common case, costs one.
+
+The fallback triggers on that one description alone. A blanket retry-on-failure would double
+every failed edit and could report a caption error for a text message. If the caption attempt
+also fails, **its** error surfaces — it is the call that made the real attempt.
+
+### Failure categories
+
+| Telegram answer | Raised as |
+|---|---|
+| `message to edit/delete not found` | `ChatterInvalidTargetError` |
+| `message can't be edited/deleted` | `ChatterAuthorizationError` |
+| `message can't be deleted for everyone` (past the window) | `ChatterAuthorizationError` |
+| `message is not modified` | `ChatterConfigurationError` |
+| `chat not found`, blocked/kicked | `ChatterInvalidTargetError` |
+| 429 | `ChatterRateLimitError` with `retryAfterMs` |
+
+Two of those rows are worth knowing about:
+
+- **`message is not modified` is a rejection, not a success.** See the core README for why, and
+  for the `catch` an application that edits on a timer will need.
+- **The elapsed-time refusal shares `ChatterAuthorizationError`.** Telegram reports it as a
+  permission failure rather than a distinct code, so there is nothing finer to map it onto
+  without inventing a distinction the provider is not making. The provider's own wording is
+  preserved in the error message and the underlying `GrammyError` is attached as `cause`.
+
+### No local pre-judgement of Telegram's time windows
+
+Telegram limits how long a bot may delete another participant's message. This adapter does
+**not** check that locally — it attempts the operation and reports the answer. A window
+evaluated against a local clock is wrong near the boundary whenever clocks disagree, and would
+refuse operations Telegram would have accepted.
+
+This is not inconsistent with the message-length and attachment-size checks `send()` makes
+before calling out: those are knowable locally and cannot change between the check and the call.
+Elapsed time is neither.
+
 ## Verifying against a real bot
 
 The automated test suite runs entirely against a stubbed transport (no real Telegram

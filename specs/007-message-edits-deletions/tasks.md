@@ -170,23 +170,23 @@ independently and that nothing claims inbound deletion reporting.
 ### Tests for User Story 4 ⚠️ Write first
 
 - [X] T045 [P] [US4] Update the literal capability-set assertion in `packages/telegram/tests/unit/capabilities.spec.ts` (`size === 4` → `7`) and assert each new member individually — the one pre-existing assertion this feature is permitted to change (quickstart Scenario 10)
-- [ ] T046 [P] [US4] Add a test in `packages/core/tests/unit/capabilities.spec.ts` constructing adapters declaring each new capability in isolation, proving they gate independently (FR-018, SC-003)
+- [X] T046 [P] [US4] Add a test in `packages/core/tests/unit/capabilities.spec.ts` constructing adapters declaring each new capability in isolation, proving they gate independently (FR-018, SC-003)
 
 ### Implementation for User Story 4
 
-- [ ] T047 [P] [US4] Document the three capabilities in `packages/core/README.md`, with a dedicated subsection stating that inbound deletion notification is unavailable **because Telegram does not report it** — a provider limitation, not unfinished work (FR-014)
-- [ ] T048 [P] [US4] Document edits and the two outbound operations in `packages/telegram/README.md`, including the caption two-round-trip cost (C9) and the FR-020 identical-content rejection with a worked `catch` example
+- [X] T047 [P] [US4] Document the three capabilities in `packages/core/README.md`, with a dedicated subsection stating that inbound deletion notification is unavailable **because Telegram does not report it** — a provider limitation, not unfinished work (FR-014)
+- [X] T048 [P] [US4] Document edits and the two outbound operations in `packages/telegram/README.md`, including the caption two-round-trip cost (C9) and the FR-020 identical-content rejection with a worked `catch` example
 
 ---
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T049 [P] Add Bruno requests to `bruno/telegram-adapter/local-webhook/` for the edit path: `edited-message.yml`, `check-last-message-is-edit.yml` (asserts `editedAt` present, id matches, mentions reflect edited content), and `check-last-message-not-edited.yml`
-- [ ] T050 Extend the `/last-message` introspection endpoint in `packages/telegram/tests/bruno/webhook-test-server.ts` to surface `editedAt` and the dispatched event kind — status codes cannot verify this feature, since a correct edit and a broken one both return `200`
-- [ ] T051 Renumber received-count sequencing across `bruno/telegram-adapter/local-webhook/` (`check-received-count-*.yml` and the two `*-401.yml` security requests) — the collection runs as an ordered suite, so a stale count fails every downstream check, exactly as in 006
-- [ ] T052 [P] Update `packages/testing/README.md` (if present) for the renamed `emitInbound` hook and the capability→scenario table
-- [ ] T053 Run the full gate — `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and the Bruno collection — confirming every pre-existing test passes unmodified except T045 (quickstart Scenario 10)
-- [ ] T054 Verify the FR-024 failure is real, not theoretical: temporarily remove `emitInbound` from `packages/telegram/tests/conformance.spec.ts` and confirm a failure naming the missing `"edit"` scenario, then restore it (quickstart Scenario 9.2). 006 verified its hook the same way — the check is worthless unless someone has watched it fail
+- [X] T049 [P] Add Bruno requests to `bruno/telegram-adapter/local-webhook/` for the edit path: `edited-message.yml`, `check-last-message-is-edit.yml` (asserts `editedAt` present, id matches, mentions reflect edited content), and `check-last-message-not-edited.yml`
+- [X] T050 Extend the `/last-message` introspection endpoint in `packages/telegram/tests/bruno/webhook-test-server.ts` to surface `editedAt` and the dispatched event kind — status codes cannot verify this feature, since a correct edit and a broken one both return `200`
+- [X] T051 Renumber received-count sequencing across `bruno/telegram-adapter/local-webhook/` (`check-received-count-*.yml` and the two `*-401.yml` security requests) — the collection runs as an ordered suite, so a stale count fails every downstream check, exactly as in 006
+- [X] T052 [P] Update `packages/testing/README.md` (if present) for the renamed `emitInbound` hook and the capability→scenario table
+- [X] T053 Run the full gate — `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and the Bruno collection — confirming every pre-existing test passes unmodified except T045 (quickstart Scenario 10)
+- [X] T054 Verify the FR-024 failure is real, not theoretical: temporarily remove `emitInbound` from `packages/telegram/tests/conformance.spec.ts` and confirm a failure naming the missing `"edit"` scenario, then restore it (quickstart Scenario 9.2). 006 verified its hook the same way — the check is worthless unless someone has watched it fail
 - [ ] T055 Run `scripts/handoff.sh --reason ticket-complete --ticket 007-message-edits-deletions --summary "<summary>" --feature-complete` per AGENTS.md, appending to `Docs/Dev-log.md`
 
 ---

@@ -51,6 +51,90 @@ that doesn't declare it rejects with `ChatterUnsupportedCapabilityError`. See
 `specs/004-attachment-model/quickstart.md` for worked examples, including the oversized-attachment
 rejection path (`ChatterConfigurationError`).
 
+## Message edits and deletions
+
+Three capabilities, declared independently, because a provider may offer any combination —
+being told about someone else's edit and being allowed to edit are unrelated permissions.
+
+| Capability | Direction | Means |
+|---|---|---|
+| `"editNotifications"` | inbound | The adapter dispatches `"message.edited"` when a message it can observe changes. |
+| `"editMessage"` | outbound | `chatter.editMessage()` works on this account. |
+| `"deleteMessage"` | outbound | `chatter.deleteMessage()` works on this account. |
+
+### Receiving edits
+
+An edit arrives as its **own event**, never as another `"message.created"`:
+
+```ts
+chatter.on("message.edited", (event) => {
+  store.replace(event.message.id, event.message); // same id as the original delivery
+});
+```
+
+This is deliberate and load-bearing. Applications written before edits existed append or act on
+whatever arrives through `"message.created"`; delivering edits there would make every one of
+them double-handle, with nothing in the payload to tell the cases apart. **Subscribing to
+nothing new changes nothing** — an application that registers no `"message.edited"` handler
+behaves exactly as it did before.
+
+`Message.createdAt` remains the **original** send time and is never overwritten.
+`Message.editedAt` appears only once a message has been edited, and the key is **absent
+entirely** otherwise — so `"editedAt" in message` is the test, and an unedited message keeps
+byte-identical shape to before this feature.
+
+An edit carries **no previous content**, and never will. Supplying it would mean Chatter
+remembering every message it has delivered, which the constitution forbids twice over (no
+message history, no content persistence by default). What a message said before is the
+application's to keep if it needs it.
+
+An edit for a message the application never received is still dispatched — it is not required
+to hold prior state to make sense of one.
+
+### Editing and deleting
+
+```ts
+await chatter.editMessage({ account: "bot", conversation, messageId, text: "corrected" });
+await chatter.deleteMessage({ account: "bot", conversation, messageId });
+```
+
+Both resolve to a `DeliveryResult` naming the message acted on, the same shape `send()`
+returns. Both reject with `ChatterUnsupportedCapabilityError` — **before any provider request
+is made** — when the account does not declare the matching capability.
+
+Chatter does not restrict either operation to messages the account itself sent. It forwards the
+request and reports the provider's answer, because deciding who may change which message is the
+provider's authorization model; reimplementing it locally would duplicate it and then drift
+from it.
+
+**An edit to content the message already has is a failure, not a no-op.** It rejects with
+`ChatterConfigurationError` — the same category raised for over-length text and oversized
+attachments, since all three are caller-supplied input the provider will reject. Reporting
+success would present a refused request as carried out, and would hide an application whose
+edit "succeeds" every time because it keeps recomputing the same content. An application that
+edits on a timer will meet this routinely:
+
+```ts
+try {
+  await chatter.editMessage({ account, conversation, messageId, text: status });
+} catch (error) {
+  if (!(error instanceof ChatterConfigurationError)) throw error;
+  // Nothing to change — the message already says this.
+}
+```
+
+### There is no notification when a message is deleted
+
+**This is a provider limitation, not unfinished work.** Telegram's Bot API sends bots no update
+of any kind when a message is deleted, so no adapter could honestly declare such a capability —
+and application code would end up branching on something permanently false. There is
+deliberately no `"deleteNotifications"` beside `"editNotifications"` in the `Capability` union,
+and Chatter does not approximate one by polling, re-fetching conversations, or diffing snapshots
+of conversation state.
+
+Being able to *delete* a message and being *told* when someone else deletes one are different
+things. Chatter offers the first and not the second.
+
 ## Mentions
 
 Inbound messages from an adapter declaring the `"mentions"` capability carry

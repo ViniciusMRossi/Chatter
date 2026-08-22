@@ -22,6 +22,10 @@ runtime:
           expect(Object.prototype.hasOwnProperty.call(res.body, "mentions")).to.equal(false);
         });
 
+        test("a message that has never been edited carries no editedAt at all", function () {
+          expect(res.body).to.not.have.property("editedAt");
+        });
+
 docs: |-
   Only meaningful against `tests/bruno/webhook-test-server.ts` (see Check
   Received Count After Direct for the same caveat).

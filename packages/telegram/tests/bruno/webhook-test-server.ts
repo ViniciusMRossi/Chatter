@@ -17,6 +17,7 @@ import { StubTelegramTransport } from "../support/stub-transport.js";
  *
  * - GET /received-count  -> { count }
  * - GET /last-message    -> the most recently dispatched normalized message
+ * - GET /last-event      -> { kind, message } for the most recent dispatch
  *
  * /last-message exists because a mention assertion is otherwise untestable
  * here: "a bot command is not a mention" (specs/006-mentions FR-017) produces
@@ -38,8 +39,13 @@ const adapter = new TelegramAccountAdapter(
 );
 
 const received: InboundMessage[] = [];
+let lastEvent: { kind: string; message: InboundMessage } | null = null;
 await adapter.start((event) => {
   received.push(event.message);
+  // The KIND is the thing an HTTP status cannot show. A correctly dispatched edit and one
+  // wrongly routed through the created-message path both answer 200, so without this the
+  // collection would assert nothing about the distinction FR-002 exists to guarantee.
+  lastEvent = { kind: event.kind, message: event.message };
 });
 
 const webhookHandler = createTelegramWebhookHandler(adapter);
@@ -64,6 +70,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     // `mentions` is absent rather than empty when a message references no one, so it
     // serializes to a missing key — which is exactly what the collection asserts against.
     res.end(JSON.stringify(received[received.length - 1] ?? null));
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/last-event") {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify(lastEvent));
     return;
   }
 
