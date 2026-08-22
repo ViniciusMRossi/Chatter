@@ -1,0 +1,55 @@
+info:
+  name: Mention Message
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100007,
+        "message": {
+          "message_id": 7,
+          "date": 1700000000,
+          "chat": { "id": 556, "type": "supergroup", "title": "Team" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "text": "@chatter_test_bot hi @alice and Bob Smith",
+          "entities": [
+            { "type": "mention", "offset": 0, "length": 17 },
+            { "type": "mention", "offset": 21, "length": 6 },
+            {
+              "type": "text_mention",
+              "offset": 32,
+              "length": 9,
+              "user": { "id": 4242, "is_bot": false, "first_name": "Bob", "last_name": "Smith" }
+            }
+          ]
+        }
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("responds 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  Simulates Telegram delivering a message carrying all three mention shapes at
+  once (specs/006-mentions): an @handle of the bot itself, an @handle of
+  someone else, and a text_mention carrying a real user object.
+
+  Offsets are UTF-16 code units, which is what Telegram sends and what
+  JavaScript string indexing uses — see specs/006-mentions/research.md §1. The
+  assertions on what this produced live in the paired Check Last Message Has
+  Mentions request, since the mapping cannot be verified from a status code.

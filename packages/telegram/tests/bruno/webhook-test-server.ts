@@ -10,10 +10,18 @@ import { StubTelegramTransport } from "../support/stub-transport.js";
  * StubTelegramTransport as the Vitest integration tests — zero real Telegram
  * credentials or network access, matching this project's standing CI rule.
  *
- * Exposes one extra, test-only endpoint (GET /received-count) so Bruno's
- * `tests` blocks can assert on dispatch counts, not just HTTP status codes —
- * this is what lets the collection actually prove dedup and webhook-security
- * behavior, not just "the server responded."
+ * Exposes two extra, test-only endpoints so Bruno's `tests` blocks can assert
+ * on what was actually dispatched, not just HTTP status codes — this is what
+ * lets the collection prove dedup, webhook-security, and mention-mapping
+ * behavior rather than just "the server responded":
+ *
+ * - GET /received-count  -> { count }
+ * - GET /last-message    -> the most recently dispatched normalized message
+ *
+ * /last-message exists because a mention assertion is otherwise untestable
+ * here: "a bot command is not a mention" (specs/006-mentions FR-017) produces
+ * exactly the same 200 as every other delivery, so status alone cannot tell a
+ * correct mapping from a broken one.
  */
 
 const PORT = Number(process.env.PORT ?? 3300);
@@ -48,6 +56,14 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (req.method === "GET" && req.url === "/received-count") {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ count: received.length }));
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/last-message") {
+    res.writeHead(200, { "content-type": "application/json" });
+    // `mentions` is absent rather than empty when a message references no one, so it
+    // serializes to a missing key — which is exactly what the collection asserts against.
+    res.end(JSON.stringify(received[received.length - 1] ?? null));
     return;
   }
 

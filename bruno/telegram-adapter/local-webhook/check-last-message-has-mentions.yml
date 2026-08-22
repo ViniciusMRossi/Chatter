@@ -1,0 +1,54 @@
+info:
+  name: Check Last Message Has Mentions
+  type: http
+  seq: 12
+
+http:
+  method: GET
+  url: "{{local_last_message_url}}"
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the three mentions were mapped, in order", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.mentions).to.be.an("array");
+          expect(res.body.mentions.length).to.equal(3);
+          expect(res.body.mentions.map(function (m) { return m.text; })).to.eql([
+            "@chatter_test_bot",
+            "@alice",
+            "Bob Smith"
+          ]);
+        });
+
+        test("each mention's position isolates its own text", function () {
+          var text = res.body.text;
+          res.body.mentions.forEach(function (m) {
+            expect(text.slice(m.offset, m.offset + m.length)).to.equal(m.text);
+          });
+        });
+
+        test("only the text_mention resolves to a participant", function () {
+          expect(res.body.mentions[0].participant).to.equal(undefined);
+          expect(res.body.mentions[1].participant).to.equal(undefined);
+          expect(res.body.mentions[2].participant).to.be.an("object");
+          expect(res.body.mentions[2].participant.providerParticipantId).to.equal("4242");
+        });
+
+        test("only the mention of this bot is marked as self", function () {
+          expect(res.body.mentions[0].isSelf).to.equal(true);
+          expect(res.body.mentions[1].isSelf).to.equal(false);
+          expect(res.body.mentions[2].isSelf).to.equal(false);
+        });
+
+docs: |-
+  Only meaningful against `tests/bruno/webhook-test-server.ts`, the only server
+  exposing /last-message (see Check Received Count After Direct for the same
+  caveat on /received-count).
+
+  This is where Mention Message is actually verified. The two @handle mentions
+  must carry NO participant — Telegram sends no user id for that form, and
+  synthesizing one from the username would mint an identifier that silently
+  reassigns itself when a handle is transferred (specs/006-mentions FR-007).
