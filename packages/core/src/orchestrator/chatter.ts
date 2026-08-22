@@ -1,8 +1,8 @@
-import type { AccountAdapter, InboundMessage, SendInput } from "../adapter/adapter.js";
+import type { AccountAdapter, InboundEvent, SendInput } from "../adapter/adapter.js";
 import { ChatterConfigurationError } from "../errors/chatter-configuration-error.js";
 import type { Capability } from "../types/capability.js";
 import type { DeliveryResult } from "../types/delivery-result.js";
-import type { MessageCreatedEvent } from "../types/event.js";
+import type { MessageCreatedEvent, MessageEditedEvent } from "../types/event.js";
 import type { Message } from "../types/message.js";
 
 export interface RegisteredAccountConfig {
@@ -33,6 +33,7 @@ export interface ErrorEvent {
 
 interface ChatterEventMap {
   "message.created": MessageCreatedEvent;
+  "message.edited": MessageEditedEvent;
   lifecycle: LifecycleEvent;
   outbound: OutboundEvent;
   error: ErrorEvent;
@@ -65,8 +66,8 @@ export class Chatter {
       return;
     }
     for (const [accountName, adapter] of this.#accounts) {
-      await adapter.start((message) => {
-        this.#dispatchInbound(accountName, message);
+      await adapter.start((event) => {
+        this.#dispatchInbound(accountName, event);
       });
     }
     this.#state = "started";
@@ -124,13 +125,17 @@ export class Chatter {
     return adapter.getCapabilities();
   }
 
-  #dispatchInbound(accountName: string, raw: InboundMessage): void {
+  #dispatchInbound(accountName: string, event: InboundEvent): void {
     if (this.#state !== "started") {
       return;
     }
-    const message: Message = { ...raw, account: accountName };
-    this.#dispatch("message.created", {
-      type: "message.created",
+    const message: Message = { ...event.message, account: accountName };
+    // Each inbound kind goes to its OWN listener set. An edit must never reach a
+    // "message.created" handler: every application written before edits existed appends or
+    // acts on whatever arrives there, so routing edits through it would make all of them
+    // double-handle with nothing to tell the two cases apart.
+    this.#dispatch(event.kind, {
+      type: event.kind,
       account: accountName,
       message,
     });

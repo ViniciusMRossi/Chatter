@@ -71,6 +71,12 @@ export async function mapMessage(
     ...(attachment !== undefined ? { attachments: [attachment] } : {}),
     ...(mentions !== undefined ? { mentions } : {}),
     createdAt: new Date(message.date * 1000),
+    // `date` is when it was originally sent and never moves; `edit_date` appears only once
+    // the message has been edited. The key is omitted entirely when absent, so a
+    // never-edited message keeps exactly the shape it had before edits existed.
+    ...(message.edit_date !== undefined
+      ? { editedAt: new Date(message.edit_date * 1000) }
+      : {}),
     ...(message.reply_to_message
       ? { replyToMessageId: String(message.reply_to_message.message_id) }
       : {}),

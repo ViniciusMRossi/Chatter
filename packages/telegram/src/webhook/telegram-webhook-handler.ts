@@ -3,7 +3,7 @@ import type { TelegramAccountAdapter } from "../adapter/telegram-account-adapter
 
 const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token";
 
-function hasDispatchableContent(message: Update["message"]): boolean {
+function hasDispatchableContent(message: Update["message"] | Update["edited_message"]): boolean {
   return (
     message?.text !== undefined ||
     message?.photo !== undefined ||
@@ -41,11 +41,21 @@ export function createTelegramWebhookHandler(
       return new Response(null, { status: 200 });
     }
 
-    const message = update.message;
+    // `edited_message` is a separate update type carrying the message in its edited state.
+    // Deliberately NOT handling `edited_channel_post`: `channel_post` itself is unhandled,
+    // so an edit of one would be an edit of a message Chatter never delivered — incoherent
+    // rather than merely incomplete. Channel posts are their own ticket.
+    const created = update.message;
+    const edited = update.edited_message;
+    const message = created ?? edited;
     if (hasDispatchableContent(message) && adapter.botUserId !== undefined && message) {
       try {
         const mapped = await adapter.mapInboundMessage(message);
-        adapter.dispatchInbound(mapped);
+        if (edited !== undefined && created === undefined) {
+          adapter.dispatchInboundEdit(mapped);
+        } else {
+          adapter.dispatchInbound(mapped);
+        }
       } catch (error) {
         // Resolving an attachment's download URL is a real network call (getFile) that can
         // fail — this must not crash the handler or leave the update unacknowledged (Telegram

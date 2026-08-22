@@ -17,8 +17,8 @@ async function setUp() {
     { api: transport.api },
   );
   const received: InboundMessage[] = [];
-  await adapter.start((message) => {
-    received.push(message);
+  await adapter.start((event) => {
+    received.push(event.message);
   });
   const handler = createTelegramWebhookHandler(adapter);
   return { handler, received };

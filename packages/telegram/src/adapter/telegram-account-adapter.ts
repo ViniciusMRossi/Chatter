@@ -5,6 +5,7 @@ import {
   type AccountAdapter,
   type AdapterDeliveryResult,
   type Capability,
+  type InboundEvent,
   type InboundMessage,
   type SendInput,
 } from "@chatter/core";
@@ -21,6 +22,7 @@ const CAPABILITIES: ReadonlySet<Capability> = new Set([
   "reply",
   "attachments",
   "mentions",
+  "editNotifications",
 ]);
 /** Telegram's documented per-message text limit (characters). */
 const TELEGRAM_TEXT_LIMIT = 4096;
@@ -58,7 +60,7 @@ export class TelegramAccountAdapter implements AccountAdapter {
    * which case handle-form mentions simply never match self.
    */
   #botUsername: string | undefined;
-  #dispatch: ((message: InboundMessage) => void) | undefined;
+  #dispatch: ((event: InboundEvent) => void) | undefined;
 
   constructor(config: TelegramAccountConfig, options?: TelegramAccountAdapterOptions) {
     this.#config = config;
@@ -79,7 +81,7 @@ export class TelegramAccountAdapter implements AccountAdapter {
     return this.#botUserId;
   }
 
-  async start(dispatch: (message: InboundMessage) => void): Promise<void> {
+  async start(dispatch: (event: InboundEvent) => void): Promise<void> {
     let me;
     try {
       me = await this.#api.getMe();
@@ -204,7 +206,18 @@ export class TelegramAccountAdapter implements AccountAdapter {
 
   /** Used by createTelegramWebhookHandler() to forward a mapped inbound message. */
   dispatchInbound(message: InboundMessage): void {
-    this.#dispatch?.(message);
+    this.#dispatch?.({ kind: "message.created", message });
+  }
+
+  /**
+   * Used by createTelegramWebhookHandler() to forward a mapped edited message.
+   *
+   * A separate entry point from dispatchInbound() rather than a flag on it, so the caller
+   * cannot accidentally route an edit through the created-message path — the one mistake
+   * here that would silently break every application written before edits existed.
+   */
+  dispatchInboundEdit(message: InboundMessage): void {
+    this.#dispatch?.({ kind: "message.edited", message });
   }
 
   /** Used by createTelegramWebhookHandler() to surface a non-fatal inbound mapping failure. */
