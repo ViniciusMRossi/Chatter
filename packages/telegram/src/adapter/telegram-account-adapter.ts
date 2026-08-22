@@ -4,6 +4,8 @@ import {
   ChatterUnsupportedCapabilityError,
   type AccountAdapter,
   type AdapterDeliveryResult,
+  type DeleteInput,
+  type EditInput,
   type Capability,
   type InboundEvent,
   type InboundMessage,
@@ -14,7 +16,11 @@ import type { Message as TelegramMessage } from "@grammyjs/types";
 import { Api, InputFile } from "grammy";
 import type { TelegramAccountConfig } from "../config/telegram-account-config.js";
 import { UpdateDedupWindow } from "../dedup/update-dedup-window.js";
-import { mapTelegramError } from "../errors/map-telegram-error.js";
+import {
+  isNoTextToEdit,
+  mapTelegramEditError,
+  mapTelegramError,
+} from "../errors/map-telegram-error.js";
 import { mapMessage } from "../mapping/message.js";
 
 const CAPABILITIES: ReadonlySet<Capability> = new Set([
@@ -23,6 +29,8 @@ const CAPABILITIES: ReadonlySet<Capability> = new Set([
   "attachments",
   "mentions",
   "editNotifications",
+  "editMessage",
+  "deleteMessage",
 ]);
 /** Telegram's documented per-message text limit (characters). */
 const TELEGRAM_TEXT_LIMIT = 4096;
@@ -177,6 +185,76 @@ export class TelegramAccountAdapter implements AccountAdapter {
     } catch (error) {
       throw mapTelegramError(error);
     }
+  }
+
+
+  /**
+   * Changes a message's content in place.
+   *
+   * Which field to change is taken from the PROVIDER, not assumed and not asked of the
+   * caller: Chatter keeps no record of what it sent, and Telegram gives bots no way to fetch
+   * a message by id, so attempting the text edit and reacting to Telegram's specific
+   * "there is no text in the message to edit" answer is the only honest way to find out.
+   *
+   * Cost, accepted knowingly: editing a caption is two round trips. Editing text — the
+   * common case — remains one. Note the fallback is triggered ONLY by that one description;
+   * a blanket retry would double every failed edit and could report a caption error for a
+   * text message.
+   *
+   * Deliberately absent: any local check of how old the message is. Telegram enforces its own
+   * windows, and a limit evaluated against a local clock is wrong near the boundary whenever
+   * clocks disagree — it would refuse operations the provider would have accepted. This is
+   * not inconsistent with send()'s length and size pre-validation: those are knowable locally
+   * and cannot change between the check and the call. Elapsed time is neither.
+   */
+  async editMessage(input: EditInput): Promise<AdapterDeliveryResult> {
+    const chatId = Number(input.conversation.providerConversationId);
+    const messageId = Number(input.messageId);
+
+    try {
+      await this.#api.editMessageText(chatId, messageId, input.text);
+    } catch (error) {
+      if (!isNoTextToEdit(error)) {
+        throw mapTelegramEditError(error);
+      }
+      try {
+        await this.#api.editMessageCaption(chatId, messageId, { caption: input.text });
+      } catch (captionError) {
+        // The fallback made the real attempt against the field the message actually has, so
+        // its error is the one that describes what happened. Reporting the first call's
+        // "no text to edit" would describe a probe.
+        throw mapTelegramEditError(captionError);
+      }
+    }
+
+    return {
+      provider: "telegram",
+      providerMessageId: input.messageId,
+      conversation: input.conversation,
+    };
+  }
+
+  /**
+   * Removes a message.
+   *
+   * No `timestamp` in the result: Telegram's deleteMessage returns only `true`, and a locally
+   * synthesized time would present a guess as a provider fact.
+   */
+  async deleteMessage(input: DeleteInput): Promise<AdapterDeliveryResult> {
+    try {
+      await this.#api.deleteMessage(
+        Number(input.conversation.providerConversationId),
+        Number(input.messageId),
+      );
+    } catch (error) {
+      throw mapTelegramError(error);
+    }
+
+    return {
+      provider: "telegram",
+      providerMessageId: input.messageId,
+      conversation: input.conversation,
+    };
   }
 
   #sendAttachment(

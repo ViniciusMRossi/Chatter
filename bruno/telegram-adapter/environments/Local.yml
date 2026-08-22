@@ -68,3 +68,13 @@ variables:
       this. Returns the most recently dispatched normalized message, so the
       mention requests can assert on what was actually mapped rather than only
       on HTTP status.
+
+  - name: local_last_event_url
+    value: http://localhost:3300/last-event
+    enabled: true
+    secret: false
+    description: |-
+      Same caveat as local_received_count_url — only the CI test server exposes
+      this. Returns { kind, message } for the most recent dispatch, so the edit
+      requests can assert that an edit arrived as "message.edited" rather than as
+      another created message — a distinction no HTTP status can show.

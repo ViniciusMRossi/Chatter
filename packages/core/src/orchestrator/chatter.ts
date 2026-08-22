@@ -1,5 +1,12 @@
-import type { AccountAdapter, InboundEvent, SendInput } from "../adapter/adapter.js";
+import type {
+  AccountAdapter,
+  DeleteInput,
+  EditInput,
+  InboundEvent,
+  SendInput,
+} from "../adapter/adapter.js";
 import { ChatterConfigurationError } from "../errors/chatter-configuration-error.js";
+import { ChatterUnsupportedCapabilityError } from "../errors/chatter-unsupported-capability-error.js";
 import type { Capability } from "../types/capability.js";
 import type { DeliveryResult } from "../types/delivery-result.js";
 import type { MessageCreatedEvent, MessageEditedEvent } from "../types/event.js";
@@ -15,6 +22,8 @@ export interface ChatterConfig {
 }
 
 export type ChatterSendInput = SendInput & { readonly account: string };
+export type ChatterEditInput = EditInput & { readonly account: string };
+export type ChatterDeleteInput = DeleteInput & { readonly account: string };
 
 export interface LifecycleEvent {
   readonly phase: "started" | "stopped";
@@ -114,6 +123,74 @@ export class Chatter {
     const result = await adapter.send(sendInput);
     const deliveryResult: DeliveryResult = { ...result, account: input.account };
     this.#dispatch("outbound", { account: input.account, result: deliveryResult });
+    return deliveryResult;
+  }
+
+
+  async editMessage(input: ChatterEditInput): Promise<DeliveryResult> {
+    const adapter = this.#requireStartedAdapter(input.account, "editing messages");
+    const edit = this.#requireOperation(adapter, "editMessage", input.account);
+    const result = await edit({
+      conversation: input.conversation,
+      messageId: input.messageId,
+      text: input.text,
+    });
+    return this.#reportOutbound(input.account, result);
+  }
+
+  async deleteMessage(input: ChatterDeleteInput): Promise<DeliveryResult> {
+    const adapter = this.#requireStartedAdapter(input.account, "deleting messages");
+    const remove = this.#requireOperation(adapter, "deleteMessage", input.account);
+    const result = await remove({
+      conversation: input.conversation,
+      messageId: input.messageId,
+    });
+    return this.#reportOutbound(input.account, result);
+  }
+
+  #requireStartedAdapter(accountName: string, action: string): AccountAdapter {
+    if (this.#state !== "started") {
+      throw new ChatterConfigurationError(`Chatter must be started before ${action}`);
+    }
+    const adapter = this.#accounts.get(accountName);
+    if (!adapter) {
+      throw new ChatterConfigurationError(`unknown account: ${accountName}`);
+    }
+    return adapter;
+  }
+
+  /**
+   * Resolves a capability-gated outbound operation, or throws before the provider is ever
+   * contacted (FR-018).
+   *
+   * Two failures share one category here on purpose. An undeclared capability is the normal
+   * case. A DECLARED capability with no method behind it is an adapter bug — the conformance
+   * suite catches it before release — but this guard means it surfaces as a typed Chatter
+   * error rather than "adapter.editMessage is not a function".
+   */
+  #requireOperation<K extends "editMessage" | "deleteMessage">(
+    adapter: AccountAdapter,
+    capability: K,
+    accountName: string,
+  ): NonNullable<AccountAdapter[K]> {
+    if (!adapter.getCapabilities().has(capability)) {
+      throw new ChatterUnsupportedCapabilityError(
+        `account "${accountName}" does not support ${capability}`,
+      );
+    }
+    const operation = adapter[capability];
+    if (operation === undefined) {
+      throw new ChatterUnsupportedCapabilityError(
+        `account "${accountName}" declares the "${capability}" capability but does not ` +
+          "implement it",
+      );
+    }
+    return operation.bind(adapter);
+  }
+
+  #reportOutbound(accountName: string, result: Omit<DeliveryResult, "account">): DeliveryResult {
+    const deliveryResult: DeliveryResult = { ...result, account: accountName };
+    this.#dispatch("outbound", { account: accountName, result: deliveryResult });
     return deliveryResult;
   }
 

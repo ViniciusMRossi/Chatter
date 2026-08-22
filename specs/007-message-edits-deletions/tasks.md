@@ -116,20 +116,20 @@ for text and caption messages, and assert the error class for each failure row. 
 
 ### Tests for User Story 2 ⚠️ Write first, confirm they fail
 
-- [ ] T027 [P] [US2] Add `packages/telegram/tests/unit/edit-message.spec.ts` covering quickstart Scenario 5: text message → one `editMessageText`; caption message → `editMessageText` rejects with `there is no text in the message to edit`, then `editMessageCaption` succeeds; fallback also fails → the **fallback's** error surfaces. Assert the call **sequence**, not only the outcome (contracts/outbound-ops.md C9)
-- [ ] T028 [P] [US2] Add error-mapping tests to `packages/telegram/tests/unit/errors.spec.ts` for every row of the C11 table, asserting error **classes** only — never message strings (FR-019, SC-004)
-- [ ] T029 [P] [US2] Add the FR-020 test to `packages/telegram/tests/unit/errors.spec.ts`: `message is not modified` **rejects** as `ChatterConfigurationError`, and explicitly is **not** `ChatterInvalidTargetError` or `ChatterAuthorizationError` — assert what it must not be, since that is where the forbidden misattribution would show up (contracts/outbound-ops.md C10)
-- [ ] T030 [P] [US2] Add capability-gate tests in `packages/core/tests/unit/capabilities.spec.ts`: `editMessage` on an account not declaring `"editMessage"` rejects with `ChatterUnsupportedCapabilityError` **and the stubbed adapter records zero calls** (FR-018, quickstart Scenario 8)
-- [ ] T031 [US2] Add conformance checks for outbound operations in `packages/testing/src/conformance/conformance-suite.ts`: a rejected target surfaces a categorized error, an identical-content edit does not pass as success, and a declared capability without its method fails the suite (FR-026, FR-024)
+- [X] T027 [P] [US2] Add `packages/telegram/tests/unit/edit-message.spec.ts` covering quickstart Scenario 5: text message → one `editMessageText`; caption message → `editMessageText` rejects with `there is no text in the message to edit`, then `editMessageCaption` succeeds; fallback also fails → the **fallback's** error surfaces. Assert the call **sequence**, not only the outcome (contracts/outbound-ops.md C9)
+- [X] T028 [P] [US2] Add error-mapping tests to `packages/telegram/tests/unit/errors.spec.ts` for every row of the C11 table, asserting error **classes** only — never message strings (FR-019, SC-004)
+- [X] T029 [P] [US2] Add the FR-020 test to `packages/telegram/tests/unit/errors.spec.ts`: `message is not modified` **rejects** as `ChatterConfigurationError`, and explicitly is **not** `ChatterInvalidTargetError` or `ChatterAuthorizationError` — assert what it must not be, since that is where the forbidden misattribution would show up (contracts/outbound-ops.md C10)
+- [X] T030 [P] [US2] Add capability-gate tests in `packages/core/tests/unit/capabilities.spec.ts`: `editMessage` on an account not declaring `"editMessage"` rejects with `ChatterUnsupportedCapabilityError` **and the stubbed adapter records zero calls** (FR-018, quickstart Scenario 8)
+- [X] T031 [US2] Add conformance checks for outbound operations in `packages/testing/src/conformance/conformance-suite.ts`: a rejected target surfaces a categorized error, an identical-content edit does not pass as success, and a declared capability without its method fails the suite (FR-026, FR-024)
 
 ### Implementation for User Story 2
 
-- [ ] T032 [US2] Implement `editMessage()` on `FakeAccountAdapter` in `packages/testing/src/fake-account/fake-account-adapter.ts`, rejecting unknown message ids with `ChatterInvalidTargetError` and identical content with `ChatterConfigurationError` (FR-027)
-- [ ] T033 [US2] Add `ChatterEditInput` (account-scoped) and `Chatter.editMessage()` to `packages/core/src/orchestrator/chatter.ts`, gating on capability **and** method presence before any adapter call, and dispatching the `outbound` event on success (FR-018, research D10)
-- [ ] T034 [US2] Add the edit-scoped `message is not modified` → `ChatterConfigurationError` mapping in `packages/telegram/src/errors/map-telegram-error.ts`. **Scope it to the edit path** — do not add it to the global pattern table, so the same description arising elsewhere is not reinterpreted (research D2)
-- [ ] T035 [US2] Add `message to edit not found` / `message can't be edited` → `ChatterInvalidTargetError` and the authorization rows to `packages/telegram/src/errors/map-telegram-error.ts` (C11)
-- [ ] T036 [US2] Implement `editMessage()` on `TelegramAccountAdapter` in `packages/telegram/src/adapter/telegram-account-adapter.ts` with the caption fallback (C9), returning an `AdapterDeliveryResult` naming the edited message. Declare `"editMessage"` in `CAPABILITIES`
-- [ ] T037 [US2] Add no-local-pre-judgement guard comments where a time-window check would be tempting in `packages/telegram/src/adapter/telegram-account-adapter.ts`, noting the deliberate contrast with `send()`'s length/size pre-validation (FR-021, C12)
+- [X] T032 [US2] Implement `editMessage()` on `FakeAccountAdapter` in `packages/testing/src/fake-account/fake-account-adapter.ts`, rejecting unknown message ids with `ChatterInvalidTargetError` and identical content with `ChatterConfigurationError` (FR-027)
+- [X] T033 [US2] Add `ChatterEditInput` (account-scoped) and `Chatter.editMessage()` to `packages/core/src/orchestrator/chatter.ts`, gating on capability **and** method presence before any adapter call, and dispatching the `outbound` event on success (FR-018, research D10)
+- [X] T034 [US2] Add the edit-scoped `message is not modified` → `ChatterConfigurationError` mapping in `packages/telegram/src/errors/map-telegram-error.ts`. **Scope it to the edit path** — do not add it to the global pattern table, so the same description arising elsewhere is not reinterpreted (research D2)
+- [X] T035 [US2] Add `message to edit not found` / `message can't be edited` → `ChatterInvalidTargetError` and the authorization rows to `packages/telegram/src/errors/map-telegram-error.ts` (C11)
+- [X] T036 [US2] Implement `editMessage()` on `TelegramAccountAdapter` in `packages/telegram/src/adapter/telegram-account-adapter.ts` with the caption fallback (C9), returning an `AdapterDeliveryResult` naming the edited message. Declare `"editMessage"` in `CAPABILITIES`
+- [X] T037 [US2] Add no-local-pre-judgement guard comments where a time-window check would be tempting in `packages/telegram/src/adapter/telegram-account-adapter.ts`, noting the deliberate contrast with `send()`'s length/size pre-validation (FR-021, C12)
 
 **Checkpoint**: US1 and US2 both work independently.
 
@@ -144,16 +144,16 @@ and the error class for each refusal. No credentials.
 
 ### Tests for User Story 3 ⚠️ Write first, confirm they fail
 
-- [ ] T038 [P] [US3] Add `packages/telegram/tests/unit/delete-message.spec.ts` covering quickstart Scenario 6: success resolves to a `DeliveryResult` naming the removed id and carrying **no `timestamp`** (C13); permission refusal → `ChatterAuthorizationError`; already-deleted → `ChatterInvalidTargetError`
-- [ ] T039 [P] [US3] Add the elapsed-time refusal test to `packages/telegram/tests/unit/delete-message.spec.ts`, asserting `ChatterAuthorizationError` with the provider description preserved and the `GrammyError` attached as `cause` — pinning the known coarseness recorded in C11 so a future reader sees it as decided, not missed
-- [ ] T040 [P] [US3] Add the `deleteMessage` capability-gate test to `packages/core/tests/unit/capabilities.spec.ts` (FR-018)
+- [X] T038 [P] [US3] Add `packages/telegram/tests/unit/delete-message.spec.ts` covering quickstart Scenario 6: success resolves to a `DeliveryResult` naming the removed id and carrying **no `timestamp`** (C13); permission refusal → `ChatterAuthorizationError`; already-deleted → `ChatterInvalidTargetError`
+- [X] T039 [P] [US3] Add the elapsed-time refusal test to `packages/telegram/tests/unit/delete-message.spec.ts`, asserting `ChatterAuthorizationError` with the provider description preserved and the `GrammyError` attached as `cause` — pinning the known coarseness recorded in C11 so a future reader sees it as decided, not missed
+- [X] T040 [P] [US3] Add the `deleteMessage` capability-gate test to `packages/core/tests/unit/capabilities.spec.ts` (FR-018)
 
 ### Implementation for User Story 3
 
-- [ ] T041 [US3] Implement `deleteMessage()` on `FakeAccountAdapter` in `packages/testing/src/fake-account/fake-account-adapter.ts` (FR-027)
-- [ ] T042 [US3] Add `ChatterDeleteInput` and `Chatter.deleteMessage()` to `packages/core/src/orchestrator/chatter.ts`, gated identically to `editMessage` (FR-018)
-- [ ] T043 [US3] Add `message to delete not found` and `message can't be deleted` rows to `packages/telegram/src/errors/map-telegram-error.ts` (C11)
-- [ ] T044 [US3] Implement `deleteMessage()` on `TelegramAccountAdapter` in `packages/telegram/src/adapter/telegram-account-adapter.ts`, returning an `AdapterDeliveryResult` with no `timestamp`. Declare `"deleteMessage"` in `CAPABILITIES`
+- [X] T041 [US3] Implement `deleteMessage()` on `FakeAccountAdapter` in `packages/testing/src/fake-account/fake-account-adapter.ts` (FR-027)
+- [X] T042 [US3] Add `ChatterDeleteInput` and `Chatter.deleteMessage()` to `packages/core/src/orchestrator/chatter.ts`, gated identically to `editMessage` (FR-018)
+- [X] T043 [US3] Add `message to delete not found` and `message can't be deleted` rows to `packages/telegram/src/errors/map-telegram-error.ts` (C11)
+- [X] T044 [US3] Implement `deleteMessage()` on `TelegramAccountAdapter` in `packages/telegram/src/adapter/telegram-account-adapter.ts`, returning an `AdapterDeliveryResult` with no `timestamp`. Declare `"deleteMessage"` in `CAPABILITIES`
 
 **Checkpoint**: All three operations work independently.
 
@@ -169,25 +169,25 @@ independently and that nothing claims inbound deletion reporting.
 
 ### Tests for User Story 4 ⚠️ Write first
 
-- [ ] T045 [P] [US4] Update the literal capability-set assertion in `packages/telegram/tests/unit/capabilities.spec.ts` (`size === 4` → `7`) and assert each new member individually — the one pre-existing assertion this feature is permitted to change (quickstart Scenario 10)
-- [ ] T046 [P] [US4] Add a test in `packages/core/tests/unit/capabilities.spec.ts` constructing adapters declaring each new capability in isolation, proving they gate independently (FR-018, SC-003)
+- [X] T045 [P] [US4] Update the literal capability-set assertion in `packages/telegram/tests/unit/capabilities.spec.ts` (`size === 4` → `7`) and assert each new member individually — the one pre-existing assertion this feature is permitted to change (quickstart Scenario 10)
+- [X] T046 [P] [US4] Add a test in `packages/core/tests/unit/capabilities.spec.ts` constructing adapters declaring each new capability in isolation, proving they gate independently (FR-018, SC-003)
 
 ### Implementation for User Story 4
 
-- [ ] T047 [P] [US4] Document the three capabilities in `packages/core/README.md`, with a dedicated subsection stating that inbound deletion notification is unavailable **because Telegram does not report it** — a provider limitation, not unfinished work (FR-014)
-- [ ] T048 [P] [US4] Document edits and the two outbound operations in `packages/telegram/README.md`, including the caption two-round-trip cost (C9) and the FR-020 identical-content rejection with a worked `catch` example
+- [X] T047 [P] [US4] Document the three capabilities in `packages/core/README.md`, with a dedicated subsection stating that inbound deletion notification is unavailable **because Telegram does not report it** — a provider limitation, not unfinished work (FR-014)
+- [X] T048 [P] [US4] Document edits and the two outbound operations in `packages/telegram/README.md`, including the caption two-round-trip cost (C9) and the FR-020 identical-content rejection with a worked `catch` example
 
 ---
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T049 [P] Add Bruno requests to `bruno/telegram-adapter/local-webhook/` for the edit path: `edited-message.yml`, `check-last-message-is-edit.yml` (asserts `editedAt` present, id matches, mentions reflect edited content), and `check-last-message-not-edited.yml`
-- [ ] T050 Extend the `/last-message` introspection endpoint in `packages/telegram/tests/bruno/webhook-test-server.ts` to surface `editedAt` and the dispatched event kind — status codes cannot verify this feature, since a correct edit and a broken one both return `200`
-- [ ] T051 Renumber received-count sequencing across `bruno/telegram-adapter/local-webhook/` (`check-received-count-*.yml` and the two `*-401.yml` security requests) — the collection runs as an ordered suite, so a stale count fails every downstream check, exactly as in 006
-- [ ] T052 [P] Update `packages/testing/README.md` (if present) for the renamed `emitInbound` hook and the capability→scenario table
-- [ ] T053 Run the full gate — `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and the Bruno collection — confirming every pre-existing test passes unmodified except T045 (quickstart Scenario 10)
-- [ ] T054 Verify the FR-024 failure is real, not theoretical: temporarily remove `emitInbound` from `packages/telegram/tests/conformance.spec.ts` and confirm a failure naming the missing `"edit"` scenario, then restore it (quickstart Scenario 9.2). 006 verified its hook the same way — the check is worthless unless someone has watched it fail
-- [ ] T055 Run `scripts/handoff.sh --reason ticket-complete --ticket 007-message-edits-deletions --summary "<summary>" --feature-complete` per AGENTS.md, appending to `Docs/Dev-log.md`
+- [X] T049 [P] Add Bruno requests to `bruno/telegram-adapter/local-webhook/` for the edit path: `edited-message.yml`, `check-last-message-is-edit.yml` (asserts `editedAt` present, id matches, mentions reflect edited content), and `check-last-message-not-edited.yml`
+- [X] T050 Extend the `/last-message` introspection endpoint in `packages/telegram/tests/bruno/webhook-test-server.ts` to surface `editedAt` and the dispatched event kind — status codes cannot verify this feature, since a correct edit and a broken one both return `200`
+- [X] T051 Renumber received-count sequencing across `bruno/telegram-adapter/local-webhook/` (`check-received-count-*.yml` and the two `*-401.yml` security requests) — the collection runs as an ordered suite, so a stale count fails every downstream check, exactly as in 006
+- [X] T052 [P] Update `packages/testing/README.md` (if present) for the renamed `emitInbound` hook and the capability→scenario table
+- [X] T053 Run the full gate — `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and the Bruno collection — confirming every pre-existing test passes unmodified except T045 (quickstart Scenario 10)
+- [X] T054 Verify the FR-024 failure is real, not theoretical: temporarily remove `emitInbound` from `packages/telegram/tests/conformance.spec.ts` and confirm a failure naming the missing `"edit"` scenario, then restore it (quickstart Scenario 9.2). 006 verified its hook the same way — the check is worthless unless someone has watched it fail
+- [X] T055 Run `scripts/handoff.sh --reason ticket-complete --ticket 007-message-edits-deletions --summary "<summary>" --feature-complete` per AGENTS.md, appending to `Docs/Dev-log.md`
 
 ---
 
