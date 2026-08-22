@@ -3,7 +3,9 @@ import {
   ChatterUnsupportedCapabilityError,
   type AccountAdapter,
   type Attachment,
+  type Capability,
   type Conversation,
+  type InboundEvent,
   type InboundMessage,
 } from "@chatter/core";
 import { describe, expect, it } from "vitest";
@@ -23,20 +25,41 @@ export interface ConformanceSuiteConfig {
   /** A small, valid attachment used to exercise the "attachments" capability checks. */
   readonly getTestAttachment: () => Attachment;
   /**
-   * Causes the adapter to dispatch at least one inbound message exercising mentions. To
-   * satisfy the contract checks, the dispatched message(s) must between them include a
-   * resolved mention (one carrying a `participant`), an unresolved one (carrying none), and
-   * a mention of the adapter's own account (`isSelf: true`) alongside one that is not.
+   * Drives the adapter's real inbound path to produce the named scenario.
    *
-   * REQUIRED for any adapter declaring the "mentions" capability — the suite fails rather
-   * than skips when it is missing, so a declared capability cannot go unverified.
+   * REQUIRED for any adapter declaring a capability that maps to a scenario (see
+   * SCENARIO_FOR_CAPABILITY below) — the suite FAILS rather than skips when it is missing,
+   * so a declared capability cannot go unverified.
    *
    * This exists because every other check here drives the adapter through `send()`, which
-   * cannot reach an inbound-only feature. Adapters supply it using whatever inbound path
-   * they already have (e.g. a webhook handler fed a synthetic update).
+   * cannot reach an inbound-only feature at all. Adapters supply it using whatever inbound
+   * path they already have (e.g. a webhook handler fed a synthetic update).
+   *
+   * Deliberately ONE hook taking a scenario name rather than one hook per feature: the
+   * previous shape was mention-specific, and a second inbound feature would have made
+   * per-feature hooks the permanent pattern. A further inbound feature adds a member to
+   * `InboundScenario` and a row to the table — not a new config field.
    */
-  readonly emitInboundWithMentions?: (adapter: AccountAdapter) => void | Promise<void>;
+  readonly emitInbound?: (
+    adapter: AccountAdapter,
+    scenario: InboundScenario,
+  ) => void | Promise<void>;
 }
+
+/**
+ * An inbound behavior the suite knows how to exercise. Add a member here (and a row in
+ * SCENARIO_FOR_CAPABILITY) when a new inbound-only capability arrives.
+ */
+export type InboundScenario = "mentions" | "edit";
+
+/**
+ * Which capabilities oblige a config to supply `emitInbound`, and for which scenario.
+ * A declared capability with no way to exercise it is a suite failure, never a skip.
+ */
+const SCENARIO_FOR_CAPABILITY: readonly (readonly [Capability, InboundScenario])[] = [
+  ["mentions", "mentions"],
+  ["editNotifications", "edit"],
+];
 
 /**
  * Reusable conformance checks every AccountAdapter implementation must pass. Call this
@@ -50,10 +73,41 @@ export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void
     getKnownConversation,
     getUnknownConversation,
     getTestAttachment,
-    emitInboundWithMentions,
+    emitInbound,
   } = config;
 
+  /**
+   * Returns the emitter for `scenario`, or throws naming what is missing.
+   *
+   * Deliberately a failure, not a skip. Every other capability check in this suite can fall
+   * back to probing `send()`; inbound-only features cannot be reached that way at all, so a
+   * silent skip would leave a DECLARED capability entirely unverified while still appearing
+   * to pass. Skipping is right for probing a capability an adapter did not declare; for one
+   * it did, it is the worst possible outcome.
+   */
+  function requireEmitter(
+    capability: Capability,
+    scenario: InboundScenario,
+  ): (adapter: AccountAdapter, scenario: InboundScenario) => void | Promise<void> {
+    if (emitInbound === undefined) {
+      throw new Error(
+        `this adapter declares the '${capability}' capability, so ConformanceSuiteConfig ` +
+          `must supply emitInbound to exercise the '${scenario}' scenario — a declared ` +
+          "capability cannot go unverified",
+      );
+    }
+    return emitInbound;
+  }
+
   describe("AccountAdapter conformance", () => {
+    it("supplies emitInbound for every declared capability that needs it", () => {
+      const adapter = createAdapter();
+      for (const [capability, scenario] of SCENARIO_FOR_CAPABILITY) {
+        if (adapter.getCapabilities().has(capability)) {
+          requireEmitter(capability, scenario);
+        }
+      }
+    });
     it("declares a non-empty capability set", () => {
       const adapter = createAdapter();
       expect(adapter.getCapabilities().size).toBeGreaterThan(0);
@@ -174,26 +228,18 @@ export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void
         // Nothing to prove here — see the companion check below for the undeclared case.
         return;
       }
-      if (emitInboundWithMentions === undefined) {
-        // Deliberately a failure, not a skip. Every other capability check in this suite can
-        // fall back to probing send(); mentions are inbound-only, so without this hook a
-        // declared capability would go entirely unverified while still appearing to pass.
-        throw new Error(
-          "this adapter declares the 'mentions' capability, so ConformanceSuiteConfig must " +
-            "supply emitInboundWithMentions — a declared capability cannot go unverified",
-        );
-      }
+      const emit = requireEmitter("mentions", "mentions");
 
       const received: InboundMessage[] = [];
       await adapter.start((event) => {
         received.push(event.message);
       });
-      await emitInboundWithMentions(adapter);
+      await emit(adapter, "mentions");
 
       const withMentions = received.filter((message) => message.mentions !== undefined);
       expect(
         withMentions.length,
-        "emitInboundWithMentions must dispatch at least one message carrying mentions",
+        "emitInbound('mentions') must dispatch at least one message carrying mentions",
       ).toBeGreaterThan(0);
 
       const allMentions = withMentions.flatMap((message) => message.mentions ?? []);
@@ -244,6 +290,104 @@ export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void
         allMentions.some((mention) => !mention.isSelf),
         "expected at least one mention that is not of the adapter's own account",
       ).toBe(true);
+
+      await adapter.stop();
+    });
+
+    it("reports inbound edits satisfying the shared contract when 'editNotifications' is declared", async () => {
+      const adapter = createAdapter();
+      if (!adapter.getCapabilities().has("editNotifications")) {
+        // Nothing to prove here — see the companion check below for the undeclared case.
+        return;
+      }
+      const emit = requireEmitter("editNotifications", "edit");
+
+      const events: InboundEvent[] = [];
+      await adapter.start((event) => {
+        events.push(event);
+      });
+      await emit(adapter, "edit");
+
+      const created = events.filter((event) => event.kind === "message.created");
+      const edited = events.filter((event) => event.kind === "message.edited");
+
+      expect(
+        edited.length,
+        "emitInbound('edit') must dispatch at least one 'message.edited' event",
+      ).toBeGreaterThan(0);
+
+      // THE invariant with real blast radius. Applications written before edits existed
+      // append or act on whatever arrives as "message.created"; an edit delivered there
+      // makes every one of them double-handle, with nothing to tell the cases apart. Assert
+      // the ABSENCE, not merely that an edit also showed up somewhere.
+      for (const event of created) {
+        expect(
+          event.message.editedAt,
+          "a 'message.created' event must never carry an edited message — edits belong to " +
+            "'message.edited' alone",
+        ).toBeUndefined();
+      }
+
+      for (const event of edited) {
+        const message = event.message;
+
+        // An edit reuses the id the message was first delivered under, so an application
+        // can correlate without comparing content.
+        expect(message.id, "an edited message must keep its original id").toBeTruthy();
+
+        expect(
+          message.editedAt,
+          "an edited message must report when it was last edited",
+        ).toBeInstanceOf(Date);
+        expect(
+          message.createdAt,
+          "an edited message must still report when it was ORIGINALLY sent",
+        ).toBeInstanceOf(Date);
+        const editedAt = message.editedAt;
+        if (editedAt !== undefined) {
+          expect(editedAt.getTime(), "editedAt cannot precede createdAt").toBeGreaterThanOrEqual(
+            message.createdAt.getTime(),
+          );
+        }
+
+        // If the emitter dispatched the original too, createdAt must be untouched by the
+        // edit — an edit reports a change of content, never a change of when it was sent.
+        const original = created.find((c) => c.message.id === message.id);
+        if (original !== undefined) {
+          expect(
+            message.createdAt.getTime(),
+            "an edit must not overwrite the original send time",
+          ).toBe(original.message.createdAt.getTime());
+          // The key must be ABSENT on a never-edited message, not present-and-undefined —
+          // that is what keeps an unedited message identical in shape to before edits
+          // existed.
+          expect(
+            "editedAt" in original.message,
+            "a message that has not been edited must not carry an editedAt key at all",
+          ).toBe(false);
+        }
+      }
+
+      await adapter.stop();
+    });
+
+    it("reports no edited messages when 'editNotifications' is not declared", async () => {
+      const adapter = createAdapter();
+      if (adapter.getCapabilities().has("editNotifications")) {
+        // This adapter declares edit reporting — see the companion check above.
+        return;
+      }
+
+      const events: InboundEvent[] = [];
+      await adapter.start((event) => {
+        events.push(event);
+      });
+      await getKnownConversation(adapter);
+
+      for (const event of events) {
+        expect(event.kind).toBe("message.created");
+        expect(event.message.editedAt).toBeUndefined();
+      }
 
       await adapter.stop();
     });

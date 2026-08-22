@@ -138,7 +138,7 @@ export class Chatter {
       type: event.kind,
       account: accountName,
       message,
-    } as ChatterEventMap[typeof event.kind]);
+    });
   }
 
   #dispatch<K extends keyof ChatterEventMap>(event: K, payload: ChatterEventMap[K]): void {

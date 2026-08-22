@@ -13,6 +13,8 @@ import {
 } from "@chatter/core";
 
 const DEFAULT_CAPABILITIES: Capability[] = ["text", "reply", "thread"];
+// "editNotifications", "editMessage" and "deleteMessage" are opt-in via config rather
+// than default, so the existing conformance runs keep exercising the negative branches.
 /** Account scope for participants this fake synthesizes. */
 const FAKE_ACCOUNT_ID = "fake-account";
 
@@ -68,6 +70,55 @@ export class FakeAccountAdapter implements AccountAdapter {
     );
     this.#knownMessageIds.add(message.id);
     this.#dispatch?.({ kind: "message.created", message });
+  }
+
+
+  /**
+   * Test helper: simulates a message arriving and then being edited — the "edit" scenario
+   * the shared conformance suite requires of any adapter declaring "editNotifications".
+   *
+   * Both dispatches carry the SAME id, `createdAt` is identical across the pair, and only
+   * the second carries `editedAt` — so this exercises the real contract (correlate by id,
+   * original send time never overwritten) rather than a simplified stand-in. The edit also
+   * changes the mentions, so an adapter that reported mentions from stale content would be
+   * caught here rather than in a Telegram-specific test.
+   */
+  emitInboundEdit(conversationId = "edit-conversation"): void {
+    const conversation = {
+      provider: this.provider,
+      providerAccountId: FAKE_ACCOUNT_ID,
+      providerConversationId: conversationId,
+      type: "group" as const,
+    };
+    const sender = {
+      provider: this.provider,
+      providerAccountId: FAKE_ACCOUNT_ID,
+      providerParticipantId: "fake-sender",
+    };
+    const createdAt = new Date(1_700_000_000_000);
+    const base = { id: "edit-message-1", provider: this.provider, sender, conversation, createdAt };
+
+    // The original. Deliberately built WITHOUT an editedAt key at all, not with an
+    // undefined one — a never-edited message must keep the shape it had before edits
+    // existed.
+    this.emitInbound({ ...base, text: "hi @alice" });
+
+    this.#knownConversationIds.add(
+      conversationKey(
+        conversation.provider,
+        conversation.providerAccountId,
+        conversation.providerConversationId,
+      ),
+    );
+    this.#dispatch?.({
+      kind: "message.edited",
+      message: {
+        ...base,
+        text: "hi @bob",
+        editedAt: new Date(createdAt.getTime() + 60_000),
+        mentions: [{ text: "@bob", offset: 3, length: 4, isSelf: false }],
+      },
+    });
   }
 
   /**
