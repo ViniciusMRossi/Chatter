@@ -12,6 +12,8 @@ import {
 } from "@chatter/core";
 
 const DEFAULT_CAPABILITIES: Capability[] = ["text", "reply", "thread"];
+/** Account scope for participants this fake synthesizes. */
+const FAKE_ACCOUNT_ID = "fake-account";
 
 export interface FakeAccountAdapterConfig {
   readonly capabilities?: Capability[];
@@ -65,6 +67,58 @@ export class FakeAccountAdapter implements AccountAdapter {
     );
     this.#knownMessageIds.add(message.id);
     this.#dispatch?.(message);
+  }
+
+  /**
+   * Test helper: simulates an inbound message carrying mentions, covering every branch the
+   * conformance suite requires — a resolved mention, an unresolved one, a mention of this
+   * account itself, and one that is not.
+   *
+   * The text and offsets are real: each mention's offset/length genuinely slices its own text
+   * out of `text`, including across the emoji, so this helper exercises the same UTF-16
+   * code-unit invariant a real adapter must satisfy rather than a simplified stand-in.
+   */
+  emitInboundWithMentions(conversationId = "mentions-conversation"): void {
+    const text = "👋 @self hello @alice and Bob Smith";
+    const conversation = {
+      provider: this.provider,
+      providerAccountId: FAKE_ACCOUNT_ID,
+      providerConversationId: conversationId,
+      type: "group" as const,
+    };
+
+    this.emitInbound({
+      id: "mentions-message-1",
+      provider: this.provider,
+      sender: {
+        provider: this.provider,
+        providerAccountId: FAKE_ACCOUNT_ID,
+        providerParticipantId: "fake-sender",
+      },
+      conversation,
+      text,
+      createdAt: new Date(),
+      mentions: [
+        // Unresolved and self: the handle form carries no id, exactly as a real provider
+        // delivers it — recognizing ourselves does not license inventing a participant.
+        { text: "@self", offset: 3, length: 5, isSelf: true },
+        // Unresolved, not self.
+        { text: "@alice", offset: 15, length: 6, isSelf: false },
+        // Resolved, not self.
+        {
+          text: "Bob Smith",
+          offset: 26,
+          length: 9,
+          participant: {
+            provider: this.provider,
+            providerAccountId: FAKE_ACCOUNT_ID,
+            providerParticipantId: "fake-bob",
+            displayName: "Bob Smith",
+          },
+          isSelf: false,
+        },
+      ],
+    });
   }
 
   /** Test helper: makes the next send() reject with ChatterRateLimitError. */

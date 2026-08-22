@@ -4,6 +4,7 @@ import {
   type AccountAdapter,
   type Attachment,
   type Conversation,
+  type InboundMessage,
 } from "@chatter/core";
 import { describe, expect, it } from "vitest";
 
@@ -21,6 +22,20 @@ export interface ConformanceSuiteConfig {
   readonly getUnknownConversation: () => Conversation;
   /** A small, valid attachment used to exercise the "attachments" capability checks. */
   readonly getTestAttachment: () => Attachment;
+  /**
+   * Causes the adapter to dispatch at least one inbound message exercising mentions. To
+   * satisfy the contract checks, the dispatched message(s) must between them include a
+   * resolved mention (one carrying a `participant`), an unresolved one (carrying none), and
+   * a mention of the adapter's own account (`isSelf: true`) alongside one that is not.
+   *
+   * REQUIRED for any adapter declaring the "mentions" capability — the suite fails rather
+   * than skips when it is missing, so a declared capability cannot go unverified.
+   *
+   * This exists because every other check here drives the adapter through `send()`, which
+   * cannot reach an inbound-only feature. Adapters supply it using whatever inbound path
+   * they already have (e.g. a webhook handler fed a synthetic update).
+   */
+  readonly emitInboundWithMentions?: (adapter: AccountAdapter) => void | Promise<void>;
 }
 
 /**
@@ -30,7 +45,13 @@ export interface ConformanceSuiteConfig {
  * unchanged, per constitution Principle IV.
  */
 export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void {
-  const { createAdapter, getKnownConversation, getUnknownConversation, getTestAttachment } = config;
+  const {
+    createAdapter,
+    getKnownConversation,
+    getUnknownConversation,
+    getTestAttachment,
+    emitInboundWithMentions,
+  } = config;
 
   describe("AccountAdapter conformance", () => {
     it("declares a non-empty capability set", () => {
@@ -143,6 +164,110 @@ export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void
       await expect(
         adapter.send({ conversation, attachment: getTestAttachment() }),
       ).rejects.toBeInstanceOf(ChatterUnsupportedCapabilityError);
+
+      await adapter.stop();
+    });
+
+    it("reports inbound mentions satisfying the shared contract when 'mentions' is declared", async () => {
+      const adapter = createAdapter();
+      if (!adapter.getCapabilities().has("mentions")) {
+        // Nothing to prove here — see the companion check below for the undeclared case.
+        return;
+      }
+      if (emitInboundWithMentions === undefined) {
+        // Deliberately a failure, not a skip. Every other capability check in this suite can
+        // fall back to probing send(); mentions are inbound-only, so without this hook a
+        // declared capability would go entirely unverified while still appearing to pass.
+        throw new Error(
+          "this adapter declares the 'mentions' capability, so ConformanceSuiteConfig must " +
+            "supply emitInboundWithMentions — a declared capability cannot go unverified",
+        );
+      }
+
+      const received: InboundMessage[] = [];
+      await adapter.start((message) => {
+        received.push(message);
+      });
+      await emitInboundWithMentions(adapter);
+
+      const withMentions = received.filter((message) => message.mentions !== undefined);
+      expect(
+        withMentions.length,
+        "emitInboundWithMentions must dispatch at least one message carrying mentions",
+      ).toBeGreaterThan(0);
+
+      const allMentions = withMentions.flatMap((message) => message.mentions ?? []);
+
+      for (const message of withMentions) {
+        const text = message.text;
+        expect(text, "a message carrying mentions must carry the text they index into").toBeDefined();
+        if (text === undefined) continue;
+
+        for (const mention of message.mentions ?? []) {
+          // The core invariant: a mention's reported position must isolate its reported text.
+          expect(text.slice(mention.offset, mention.offset + mention.length)).toBe(mention.text);
+          expect(mention.offset).toBeGreaterThanOrEqual(0);
+          expect(mention.offset + mention.length).toBeLessThanOrEqual(text.length);
+          expect(typeof mention.isSelf).toBe("boolean");
+        }
+
+        const offsets = (message.mentions ?? []).map((mention) => mention.offset);
+        expect(offsets, "mentions must be ordered by where they appear in the text").toEqual(
+          [...offsets].sort((a, b) => a - b),
+        );
+      }
+
+      // Both resolution branches must be reachable, not merely assumed.
+      expect(
+        allMentions.some((mention) => mention.participant !== undefined),
+        "expected at least one resolved mention",
+      ).toBe(true);
+      expect(
+        allMentions.some((mention) => mention.participant === undefined),
+        "expected at least one unresolved mention — an adapter that resolves everything is " +
+          "likely fabricating identities",
+      ).toBe(true);
+
+      // No fabricated or placeholder identities.
+      for (const mention of allMentions) {
+        if (mention.participant === undefined) continue;
+        expect(mention.participant.providerParticipantId).toBeTruthy();
+        expect(mention.participant.providerParticipantId.trim()).not.toBe("");
+      }
+
+      // Both sides of the self signal must be reachable too.
+      expect(
+        allMentions.some((mention) => mention.isSelf),
+        "expected at least one mention of the adapter's own account",
+      ).toBe(true);
+      expect(
+        allMentions.some((mention) => !mention.isSelf),
+        "expected at least one mention that is not of the adapter's own account",
+      ).toBe(true);
+
+      await adapter.stop();
+    });
+
+    it("reports no mentions on inbound messages when 'mentions' is not declared", async () => {
+      const adapter = createAdapter();
+      if (adapter.getCapabilities().has("mentions")) {
+        // This adapter declares mention support — see the companion check above.
+        return;
+      }
+
+      const received: InboundMessage[] = [];
+      await adapter.start((message) => {
+        received.push(message);
+      });
+      // getKnownConversation is the suite's existing way of making an adapter aware of a
+      // conversation; for adapters that do so by driving their real inbound path, this also
+      // gives us dispatched messages to inspect. Adapters that don't simply have nothing to
+      // check here.
+      await getKnownConversation(adapter);
+
+      for (const message of received) {
+        expect(message.mentions).toBeUndefined();
+      }
 
       await adapter.stop();
     });
