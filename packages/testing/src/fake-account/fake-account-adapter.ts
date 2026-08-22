@@ -6,6 +6,8 @@ import {
   conversationKey,
   type AccountAdapter,
   type AdapterDeliveryResult,
+  type DeleteInput,
+  type EditInput,
   type Capability,
   type InboundEvent,
   type InboundMessage,
@@ -31,11 +33,15 @@ interface PendingRateLimit {
 export class FakeAccountAdapter implements AccountAdapter {
   readonly provider = "fake";
   readonly sentMessages: AdapterDeliveryResult[] = [];
+  /** Test-visible logs proving an operation reached the adapter — or, when empty, did not. */
+  readonly editedMessages: { readonly messageId: string; readonly text: string }[] = [];
+  readonly deletedMessageIds: string[] = [];
 
   #capabilities: ReadonlySet<Capability>;
   #dispatch: ((event: InboundEvent) => void) | undefined;
   #knownConversationIds = new Set<string>();
   #knownMessageIds = new Set<string>();
+  #messageText = new Map<string, string>();
   #maxAttachmentSizeBytes: number | undefined;
   #pendingRateLimit: PendingRateLimit | undefined;
   #sentCounter = 0;
@@ -57,6 +63,48 @@ export class FakeAccountAdapter implements AccountAdapter {
   stop(): Promise<void> {
     this.#dispatch = undefined;
     return Promise.resolve();
+  }
+
+
+  editMessage(input: EditInput): Promise<AdapterDeliveryResult> {
+    if (!this.#knownMessageIds.has(input.messageId)) {
+      return Promise.reject(
+        new ChatterInvalidTargetError(`unknown message: ${input.messageId}`),
+      );
+    }
+    if (this.#messageText.get(input.messageId) === input.text) {
+      // Mirrors what a real provider does with an unchanged edit. Modelled here so the
+      // shared conformance check has something to exercise on the fake, rather than the
+      // behavior existing only inside one provider adapter.
+      return Promise.reject(
+        new ChatterConfigurationError(
+          `message ${input.messageId} already has that content — nothing to change`,
+        ),
+      );
+    }
+    this.#messageText.set(input.messageId, input.text);
+    this.editedMessages.push({ messageId: input.messageId, text: input.text });
+    return Promise.resolve({
+      provider: this.provider,
+      providerMessageId: input.messageId,
+      conversation: input.conversation,
+    });
+  }
+
+  deleteMessage(input: DeleteInput): Promise<AdapterDeliveryResult> {
+    if (!this.#knownMessageIds.has(input.messageId)) {
+      return Promise.reject(
+        new ChatterInvalidTargetError(`unknown message: ${input.messageId}`),
+      );
+    }
+    this.#knownMessageIds.delete(input.messageId);
+    this.#messageText.delete(input.messageId);
+    this.deletedMessageIds.push(input.messageId);
+    return Promise.resolve({
+      provider: this.provider,
+      providerMessageId: input.messageId,
+      conversation: input.conversation,
+    });
   }
 
   /** Test helper: simulates an inbound message arriving on this account. */
@@ -223,9 +271,16 @@ export class FakeAccountAdapter implements AccountAdapter {
     }
 
     this.#sentCounter += 1;
+    const providerMessageId = `fake-sent-${String(this.#sentCounter)}`;
+    // A message this adapter sent is a message it can later edit or delete, exactly as with
+    // a real provider — so record it under the same id the caller is handed back.
+    this.#knownMessageIds.add(providerMessageId);
+    if (input.text !== undefined) {
+      this.#messageText.set(providerMessageId, input.text);
+    }
     const result: AdapterDeliveryResult = {
       provider: this.provider,
-      providerMessageId: `fake-sent-${String(this.#sentCounter)}`,
+      providerMessageId,
       conversation: input.conversation,
       timestamp: new Date(),
     };

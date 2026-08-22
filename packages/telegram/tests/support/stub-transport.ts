@@ -27,6 +27,13 @@ export class StubTelegramTransport {
 
   #queues = new Map<string, ApiResponse<unknown>[]>();
   #sentMessageCounter = 0;
+  /**
+   * Text of each message this stub has "sent", keyed by message_id. Needed so an edit can be
+   * answered the way Telegram really answers it: unchanged content is an ERROR, not a no-op.
+   * Modelling that here rather than only in a queued canned response means the shared
+   * conformance suite can exercise it against this adapter for real.
+   */
+  #messageText = new Map<number, string>();
 
   constructor(botToken = "test-token:stub") {
     this.api = new Api(botToken);
@@ -76,6 +83,9 @@ export class StubTelegramTransport {
           return { ok: false, error_code: 400, description: "Bad Request: chat not found" };
         }
         this.#sentMessageCounter += 1;
+        if (typeof payload.text === "string") {
+          this.#messageText.set(this.#sentMessageCounter, payload.text);
+        }
         return {
           ok: true,
           result: {
@@ -104,6 +114,40 @@ export class StubTelegramTransport {
             [mediaField]: payload[mediaField],
           },
         };
+      }
+      case "editMessageText": {
+        if (payload.chat_id === UNKNOWN_CHAT_ID) {
+          return { ok: false, error_code: 400, description: "Bad Request: chat not found" };
+        }
+        const messageId = Number(payload.message_id);
+        const known = this.#messageText.get(messageId);
+        if (known === undefined) {
+          return {
+            ok: false,
+            error_code: 400,
+            description: "Bad Request: message to edit not found",
+          };
+        }
+        if (known === payload.text) {
+          // Telegram's real answer to an edit that would change nothing. It is an error, not
+          // a no-op, and Chatter deliberately does not convert it into a success.
+          return {
+            ok: false,
+            error_code: 400,
+            description: "Bad Request: message is not modified",
+          };
+        }
+        if (typeof payload.text === "string") {
+          this.#messageText.set(messageId, payload.text);
+        }
+        return { ok: true, result: true };
+      }
+      case "editMessageCaption":
+      case "deleteMessage": {
+        if (payload.chat_id === UNKNOWN_CHAT_ID) {
+          return { ok: false, error_code: 400, description: "Bad Request: chat not found" };
+        }
+        return { ok: true, result: true };
       }
       case "getFile": {
         const fileId = typeof payload.file_id === "string" ? payload.file_id : "";

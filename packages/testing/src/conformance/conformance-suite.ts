@@ -1,4 +1,5 @@
 import {
+  ChatterError,
   ChatterInvalidTargetError,
   ChatterUnsupportedCapabilityError,
   type AccountAdapter,
@@ -290,6 +291,93 @@ export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void
         allMentions.some((mention) => !mention.isSelf),
         "expected at least one mention that is not of the adapter's own account",
       ).toBe(true);
+
+      await adapter.stop();
+    });
+
+    it("implements editMessage when 'editMessage' is declared", () => {
+      const adapter = createAdapter();
+      if (!adapter.getCapabilities().has("editMessage")) {
+        return;
+      }
+      // A declared capability with no method behind it is an adapter bug. Caught here rather
+      // than at runtime as "adapter.editMessage is not a function".
+      expect(
+        typeof adapter.editMessage,
+        "an adapter declaring 'editMessage' must implement editMessage()",
+      ).toBe("function");
+    });
+
+    it("implements deleteMessage when 'deleteMessage' is declared", () => {
+      const adapter = createAdapter();
+      if (!adapter.getCapabilities().has("deleteMessage")) {
+        return;
+      }
+      expect(
+        typeof adapter.deleteMessage,
+        "an adapter declaring 'deleteMessage' must implement deleteMessage()",
+      ).toBe("function");
+    });
+
+    it("surfaces a categorized error when an outbound operation targets a message the provider rejects", async () => {
+      const adapter = createAdapter();
+      const capabilities = adapter.getCapabilities();
+      if (!capabilities.has("editMessage") && !capabilities.has("deleteMessage")) {
+        return;
+      }
+
+      await adapter.start(() => {
+        // no-op
+      });
+      const unknown = getUnknownConversation();
+
+      if (capabilities.has("editMessage") && adapter.editMessage !== undefined) {
+        // Must be a categorized ChatterError — not a generic failure, and above all not a
+        // silent success. An operation that "succeeds" against a target the provider refused
+        // is the worst outcome available here.
+        await expect(
+          adapter.editMessage({
+            conversation: unknown,
+            messageId: "conformance-unknown-message",
+            text: "should not apply",
+          }),
+        ).rejects.toBeInstanceOf(ChatterError);
+      }
+      if (capabilities.has("deleteMessage") && adapter.deleteMessage !== undefined) {
+        await expect(
+          adapter.deleteMessage({
+            conversation: unknown,
+            messageId: "conformance-unknown-message",
+          }),
+        ).rejects.toBeInstanceOf(ChatterError);
+      }
+
+      await adapter.stop();
+    });
+
+    it("refuses an edit to identical content rather than reporting success", async () => {
+      const adapter = createAdapter();
+      if (!adapter.getCapabilities().has("editMessage") || adapter.editMessage === undefined) {
+        return;
+      }
+
+      await adapter.start(() => {
+        // no-op
+      });
+      const conversation = await getKnownConversation(adapter);
+      const sent = await adapter.send({ conversation, text: "unchanged" });
+
+      // Reporting success would present a request the provider refused as carried out, and
+      // would conceal an application whose edit "succeeds" every time because it keeps
+      // recomputing the same content.
+      await expect(
+        adapter.editMessage({
+          conversation,
+          messageId: sent.providerMessageId,
+          text: "unchanged",
+        }),
+        "an edit to identical content must reject, not resolve",
+      ).rejects.toBeInstanceOf(ChatterError);
 
       await adapter.stop();
     });
