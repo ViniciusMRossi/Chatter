@@ -7,6 +7,7 @@ import {
   type AccountAdapter,
   type AdapterDeliveryResult,
   type Capability,
+  type InboundEvent,
   type InboundMessage,
   type SendInput,
 } from "@chatter/core";
@@ -30,7 +31,7 @@ export class FakeAccountAdapter implements AccountAdapter {
   readonly sentMessages: AdapterDeliveryResult[] = [];
 
   #capabilities: ReadonlySet<Capability>;
-  #dispatch: ((message: InboundMessage) => void) | undefined;
+  #dispatch: ((event: InboundEvent) => void) | undefined;
   #knownConversationIds = new Set<string>();
   #knownMessageIds = new Set<string>();
   #maxAttachmentSizeBytes: number | undefined;
@@ -46,7 +47,7 @@ export class FakeAccountAdapter implements AccountAdapter {
     return this.#capabilities;
   }
 
-  start(dispatch: (message: InboundMessage) => void): Promise<void> {
+  start(dispatch: (event: InboundEvent) => void): Promise<void> {
     this.#dispatch = dispatch;
     return Promise.resolve();
   }
@@ -66,7 +67,7 @@ export class FakeAccountAdapter implements AccountAdapter {
       ),
     );
     this.#knownMessageIds.add(message.id);
-    this.#dispatch?.(message);
+    this.#dispatch?.({ kind: "message.created", message });
   }
 
   /**

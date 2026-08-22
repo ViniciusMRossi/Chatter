@@ -185,8 +185,8 @@ export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void
       }
 
       const received: InboundMessage[] = [];
-      await adapter.start((message) => {
-        received.push(message);
+      await adapter.start((event) => {
+        received.push(event.message);
       });
       await emitInboundWithMentions(adapter);
 
@@ -256,8 +256,8 @@ export function runAccountConformanceSuite(config: ConformanceSuiteConfig): void
       }
 
       const received: InboundMessage[] = [];
-      await adapter.start((message) => {
-        received.push(message);
+      await adapter.start((event) => {
+        received.push(event.message);
       });
       // getKnownConversation is the suite's existing way of making an adapter aware of a
       // conversation; for adapters that do so by driving their real inbound path, this also

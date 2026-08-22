@@ -5,6 +5,7 @@ import {
   type AccountAdapter,
   type AdapterDeliveryResult,
   type Capability,
+  type InboundEvent,
   type InboundMessage,
   type SendInput,
 } from "@chatter/core";
@@ -58,7 +59,7 @@ export class TelegramAccountAdapter implements AccountAdapter {
    * which case handle-form mentions simply never match self.
    */
   #botUsername: string | undefined;
-  #dispatch: ((message: InboundMessage) => void) | undefined;
+  #dispatch: ((event: InboundEvent) => void) | undefined;
 
   constructor(config: TelegramAccountConfig, options?: TelegramAccountAdapterOptions) {
     this.#config = config;
@@ -79,7 +80,7 @@ export class TelegramAccountAdapter implements AccountAdapter {
     return this.#botUserId;
   }
 
-  async start(dispatch: (message: InboundMessage) => void): Promise<void> {
+  async start(dispatch: (event: InboundEvent) => void): Promise<void> {
     let me;
     try {
       me = await this.#api.getMe();
@@ -204,7 +205,7 @@ export class TelegramAccountAdapter implements AccountAdapter {
 
   /** Used by createTelegramWebhookHandler() to forward a mapped inbound message. */
   dispatchInbound(message: InboundMessage): void {
-    this.#dispatch?.(message);
+    this.#dispatch?.({ kind: "message.created", message });
   }
 
   /** Used by createTelegramWebhookHandler() to surface a non-fatal inbound mapping failure. */
