@@ -187,7 +187,7 @@ independently and that nothing claims inbound deletion reporting.
 - [X] T052 [P] Update `packages/testing/README.md` (if present) for the renamed `emitInbound` hook and the capability→scenario table
 - [X] T053 Run the full gate — `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and the Bruno collection — confirming every pre-existing test passes unmodified except T045 (quickstart Scenario 10)
 - [X] T054 Verify the FR-024 failure is real, not theoretical: temporarily remove `emitInbound` from `packages/telegram/tests/conformance.spec.ts` and confirm a failure naming the missing `"edit"` scenario, then restore it (quickstart Scenario 9.2). 006 verified its hook the same way — the check is worthless unless someone has watched it fail
-- [ ] T055 Run `scripts/handoff.sh --reason ticket-complete --ticket 007-message-edits-deletions --summary "<summary>" --feature-complete` per AGENTS.md, appending to `Docs/Dev-log.md`
+- [X] T055 Run `scripts/handoff.sh --reason ticket-complete --ticket 007-message-edits-deletions --summary "<summary>" --feature-complete` per AGENTS.md, appending to `Docs/Dev-log.md`
 
 ---
 
