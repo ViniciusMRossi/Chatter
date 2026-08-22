@@ -34,9 +34,9 @@ pnpm monorepo. Three library packages, each with `src/` and `tests/`:
 
 **Purpose**: Version the breaking change before anything depends on it.
 
-- [ ] T001 Bump `version` to `0.2.0` in `packages/core/package.json` — `AccountAdapter` changes shape (plan.md Complexity Tracking; 0.x semver puts a breaking change in a minor bump)
-- [ ] T002 [P] Bump `version` to `0.2.0` in `packages/telegram/package.json`
-- [ ] T003 [P] Bump `version` to `0.2.0` in `packages/testing/package.json`
+- [X] T001 Bump `version` to `0.2.0` in `packages/core/package.json` — `AccountAdapter` changes shape (plan.md Complexity Tracking; 0.x semver puts a breaking change in a minor bump)
+- [X] T002 [P] Bump `version` to `0.2.0` in `packages/telegram/package.json`
+- [X] T003 [P] Bump `version` to `0.2.0` in `packages/testing/package.json`
 
 ---
 
@@ -50,22 +50,22 @@ broken ones.
 
 ### Core model (additive, no consumer changes)
 
-- [ ] T004 [P] Add `editedAt?: Date` to `Message` in `packages/core/src/types/message.ts`, documenting that it is omitted entirely when never edited and that `createdAt` is never overwritten (data-model.md §1)
-- [ ] T005 [P] Add `"editNotifications" | "editMessage" | "deleteMessage"` to `Capability` in `packages/core/src/types/capability.ts`, with a doc comment on each stating its direction and an explicit note that `"deleteNotifications"` does not exist because no provider reports deletions (FR-012, data-model.md §2)
-- [ ] T006 [P] Add `MessageEditedEvent` and widen `ChatterEvent` to a real union in `packages/core/src/types/event.ts` (data-model.md §4)
+- [X] T004 [P] Add `editedAt?: Date` to `Message` in `packages/core/src/types/message.ts`, documenting that it is omitted entirely when never edited and that `createdAt` is never overwritten (data-model.md §1)
+- [X] T005 [P] Add `"editNotifications" | "editMessage" | "deleteMessage"` to `Capability` in `packages/core/src/types/capability.ts`, with a doc comment on each stating its direction and an explicit note that `"deleteNotifications"` does not exist because no provider reports deletions (FR-012, data-model.md §2)
+- [X] T006 [P] Add `MessageEditedEvent` and widen `ChatterEvent` to a real union in `packages/core/src/types/event.ts` (data-model.md §4)
 
 ### Adapter contract (breaking — T007–T010 as one commit)
 
-- [ ] T007 Add `InboundEvent` and change `start()` to `start(dispatch: (event: InboundEvent) => void)` in `packages/core/src/adapter/adapter.ts`, with a comment recording why a tagged envelope was chosen over a second callback (research D3, contracts/inbound-events.md C1)
-- [ ] T008 Add `EditInput` and `DeleteInput`, and declare optional `editMessage?()` / `deleteMessage?()` on `AccountAdapter` in `packages/core/src/adapter/adapter.ts` (data-model.md §5, contracts/outbound-ops.md C7)
-- [ ] T009 Update `TelegramAccountAdapter` in `packages/telegram/src/adapter/telegram-account-adapter.ts` to the new dispatch signature — mechanical: `#dispatch` field type and `dispatchInbound()` wrap the message as `{ kind: "message.created", message }`
-- [ ] T010 Update `FakeAccountAdapter` in `packages/testing/src/fake-account/fake-account-adapter.ts` to the new dispatch signature, keeping `emitInbound()`'s public shape unchanged so existing callers are untouched
-- [ ] T011 Export `InboundEvent`, `EditInput`, `DeleteInput`, `MessageEditedEvent` from `packages/core/src/types/index.ts` and `packages/core/src/index.ts` as appropriate
+- [X] T007 Add `InboundEvent` and change `start()` to `start(dispatch: (event: InboundEvent) => void)` in `packages/core/src/adapter/adapter.ts`, with a comment recording why a tagged envelope was chosen over a second callback (research D3, contracts/inbound-events.md C1)
+- [X] T008 Add `EditInput` and `DeleteInput`, and declare optional `editMessage?()` / `deleteMessage?()` on `AccountAdapter` in `packages/core/src/adapter/adapter.ts` (data-model.md §5, contracts/outbound-ops.md C7)
+- [X] T009 Update `TelegramAccountAdapter` in `packages/telegram/src/adapter/telegram-account-adapter.ts` to the new dispatch signature — mechanical: `#dispatch` field type and `dispatchInbound()` wrap the message as `{ kind: "message.created", message }`
+- [X] T010 Update `FakeAccountAdapter` in `packages/testing/src/fake-account/fake-account-adapter.ts` to the new dispatch signature, keeping `emitInbound()`'s public shape unchanged so existing callers are untouched
+- [X] T011 Export `InboundEvent`, `EditInput`, `DeleteInput`, `MessageEditedEvent` from `packages/core/src/types/index.ts` and `packages/core/src/index.ts` as appropriate
 
 ### Orchestrator
 
-- [ ] T012 Route tagged inbound events in `Chatter.#dispatchInbound()` in `packages/core/src/orchestrator/chatter.ts` — `"message.created"` and `"message.edited"` dispatch to their own listener sets, filling `account` on the message inside the envelope
-- [ ] T013 Add `"message.edited": MessageEditedEvent` to the `ChatterEventMap` in `packages/core/src/orchestrator/chatter.ts` so `on()`/`off()` accept it with full typing
+- [X] T012 Route tagged inbound events in `Chatter.#dispatchInbound()` in `packages/core/src/orchestrator/chatter.ts` — `"message.created"` and `"message.edited"` dispatch to their own listener sets, filling `account` on the message inside the envelope
+- [X] T013 Add `"message.edited": MessageEditedEvent` to the `ChatterEventMap` in `packages/core/src/orchestrator/chatter.ts` so `on()`/`off()` accept it with full typing
 
 **Checkpoint**: `pnpm run typecheck` and all 158 existing tests pass. Nothing observable has changed
 for any application yet — this is the load-bearing regression gate for SC-002.
@@ -84,22 +84,22 @@ No credentials involved.
 
 ### Tests for User Story 1 ⚠️ Write first, confirm they fail
 
-- [ ] T014 [P] [US1] Generalize the conformance hook in `packages/testing/src/conformance/conformance-suite.ts`: add `InboundScenario = "mentions" | "edit"`, replace `emitInboundWithMentions` with `emitInbound?(adapter, scenario)`, and drive the existing mention checks through it (FR-023, research D4)
-- [ ] T015 [US1] Add the capability→scenario requirement table to `packages/testing/src/conformance/conformance-suite.ts`, failing with an explicit message naming the missing scenario when a declared capability has no `emitInbound` — a failure, never a skip (FR-024)
-- [ ] T016 [US1] Add conformance checks for inbound edits in `packages/testing/src/conformance/conformance-suite.ts`: edit arrives as `"message.edited"`; **no `"message.created"` handler observes it**; id matches the original; `createdAt` unchanged; `editedAt` present on the edit and the key absent on the original (FR-025, contracts/inbound-events.md C3)
-- [ ] T017 [P] [US1] Update `packages/testing/tests/conformance.spec.ts` and `packages/telegram/tests/conformance.spec.ts` to the renamed `emitInbound` hook
-- [ ] T018 [P] [US1] Add integration tests in `packages/telegram/tests/integration/edit-round-trip.spec.ts` covering quickstart Scenarios 1–3: edit dispatches separately, timestamps stay honest, mentions follow edited content (including an emoji case and an edit that removes the only mention)
-- [ ] T019 [P] [US1] Add a redelivered-edit test to `packages/telegram/tests/integration/duplicate-delivery.spec.ts` — same `update_id` twice yields one dispatch and two `200`s (FR-009; research D7 explains why this needs a test despite already working)
+- [X] T014 [P] [US1] Generalize the conformance hook in `packages/testing/src/conformance/conformance-suite.ts`: add `InboundScenario = "mentions" | "edit"`, replace `emitInboundWithMentions` with `emitInbound?(adapter, scenario)`, and drive the existing mention checks through it (FR-023, research D4)
+- [X] T015 [US1] Add the capability→scenario requirement table to `packages/testing/src/conformance/conformance-suite.ts`, failing with an explicit message naming the missing scenario when a declared capability has no `emitInbound` — a failure, never a skip (FR-024)
+- [X] T016 [US1] Add conformance checks for inbound edits in `packages/testing/src/conformance/conformance-suite.ts`: edit arrives as `"message.edited"`; **no `"message.created"` handler observes it**; id matches the original; `createdAt` unchanged; `editedAt` present on the edit and the key absent on the original (FR-025, contracts/inbound-events.md C3)
+- [X] T017 [P] [US1] Update `packages/testing/tests/conformance.spec.ts` and `packages/telegram/tests/conformance.spec.ts` to the renamed `emitInbound` hook
+- [X] T018 [P] [US1] Add integration tests in `packages/telegram/tests/integration/edit-round-trip.spec.ts` covering quickstart Scenarios 1–3: edit dispatches separately, timestamps stay honest, mentions follow edited content (including an emoji case and an edit that removes the only mention)
+- [X] T019 [P] [US1] Add a redelivered-edit test to `packages/telegram/tests/integration/duplicate-delivery.spec.ts` — same `update_id` twice yields one dispatch and two `200`s (FR-009; research D7 explains why this needs a test despite already working)
 
 ### Implementation for User Story 1
 
-- [ ] T020 [US1] Add `emitInboundEdit()` to `FakeAccountAdapter` in `packages/testing/src/fake-account/fake-account-adapter.ts` — dispatches a create then an edit of the same id, with real `editedAt` and edit-accurate mentions, so the fake exercises the contract rather than a simplified stand-in (FR-027)
-- [ ] T021 [US1] Declare `"editNotifications"` in the fake adapter's supported capability set in `packages/testing/src/fake-account/fake-account-adapter.ts`
-- [ ] T022 [US1] Map `edit_date` to `editedAt` in `mapMessage()` in `packages/telegram/src/mapping/message.ts`, omitting the key when absent (FR-006, FR-007). Mentions need no change — recomputing from the edited message satisfies FR-008 for free (research D8)
-- [ ] T023 [US1] Generalize `hasDispatchableContent()` in `packages/telegram/src/webhook/telegram-webhook-handler.ts` to take a message rather than reading `update.message` directly, so it can serve both branches
-- [ ] T024 [US1] Handle `update.edited_message` in `packages/telegram/src/webhook/telegram-webhook-handler.ts`, dispatching `{ kind: "message.edited", message }`. Keep the dedup check ahead of the branch. **Do not** handle `edited_channel_post` — out of scope, since inbound `channel_post` is itself unhandled (research D5); add a comment saying so
-- [ ] T025 [US1] Add `dispatchInboundEdit()` (or an equivalent tagged path) to `TelegramAccountAdapter` in `packages/telegram/src/adapter/telegram-account-adapter.ts`, and declare `"editNotifications"` in `CAPABILITIES`
-- [ ] T026 [US1] Supply the `"edit"` scenario in `packages/telegram/tests/conformance.spec.ts`'s `emitInbound`, driving the adapter's real webhook path with a synthetic edited update
+- [X] T020 [US1] Add `emitInboundEdit()` to `FakeAccountAdapter` in `packages/testing/src/fake-account/fake-account-adapter.ts` — dispatches a create then an edit of the same id, with real `editedAt` and edit-accurate mentions, so the fake exercises the contract rather than a simplified stand-in (FR-027)
+- [X] T021 [US1] Declare `"editNotifications"` in the fake adapter's supported capability set in `packages/testing/src/fake-account/fake-account-adapter.ts`
+- [X] T022 [US1] Map `edit_date` to `editedAt` in `mapMessage()` in `packages/telegram/src/mapping/message.ts`, omitting the key when absent (FR-006, FR-007). Mentions need no change — recomputing from the edited message satisfies FR-008 for free (research D8)
+- [X] T023 [US1] Generalize `hasDispatchableContent()` in `packages/telegram/src/webhook/telegram-webhook-handler.ts` to take a message rather than reading `update.message` directly, so it can serve both branches
+- [X] T024 [US1] Handle `update.edited_message` in `packages/telegram/src/webhook/telegram-webhook-handler.ts`, dispatching `{ kind: "message.edited", message }`. Keep the dedup check ahead of the branch. **Do not** handle `edited_channel_post` — out of scope, since inbound `channel_post` is itself unhandled (research D5); add a comment saying so
+- [X] T025 [US1] Add `dispatchInboundEdit()` (or an equivalent tagged path) to `TelegramAccountAdapter` in `packages/telegram/src/adapter/telegram-account-adapter.ts`, and declare `"editNotifications"` in `CAPABILITIES`
+- [X] T026 [US1] Supply the `"edit"` scenario in `packages/telegram/tests/conformance.spec.ts`'s `emitInbound`, driving the adapter's real webhook path with a synthetic edited update
 
 **Checkpoint**: US1 fully functional. An application can react to edits; nothing else has changed.
 This is the MVP — it closes the correctness gap that exists today and is worth shipping alone.

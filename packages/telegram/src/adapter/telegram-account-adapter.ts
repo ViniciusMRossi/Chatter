@@ -22,6 +22,7 @@ const CAPABILITIES: ReadonlySet<Capability> = new Set([
   "reply",
   "attachments",
   "mentions",
+  "editNotifications",
 ]);
 /** Telegram's documented per-message text limit (characters). */
 const TELEGRAM_TEXT_LIMIT = 4096;
@@ -206,6 +207,17 @@ export class TelegramAccountAdapter implements AccountAdapter {
   /** Used by createTelegramWebhookHandler() to forward a mapped inbound message. */
   dispatchInbound(message: InboundMessage): void {
     this.#dispatch?.({ kind: "message.created", message });
+  }
+
+  /**
+   * Used by createTelegramWebhookHandler() to forward a mapped edited message.
+   *
+   * A separate entry point from dispatchInbound() rather than a flag on it, so the caller
+   * cannot accidentally route an edit through the created-message path — the one mistake
+   * here that would silently break every application written before edits existed.
+   */
+  dispatchInboundEdit(message: InboundMessage): void {
+    this.#dispatch?.({ kind: "message.edited", message });
   }
 
   /** Used by createTelegramWebhookHandler() to surface a non-fatal inbound mapping failure. */

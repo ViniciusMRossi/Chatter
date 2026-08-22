@@ -84,8 +84,12 @@ runAccountConformanceSuite({
   // One update covers every branch the contract requires: an @handle of the bot itself
   // (unresolved + isSelf), an @handle of someone else (unresolved + not self), and a
   // text_mention carrying a real user object (resolved + not self).
-  emitInboundWithMentions: async (adapter): Promise<void> => {
+  emitInbound: async (adapter, scenario): Promise<void> => {
     const handler = createTelegramWebhookHandler(adapter as TelegramAccountAdapter);
+    if (scenario === "edit") {
+      await emitEdit(handler);
+      return;
+    }
     const text = `@${BOT_USERNAME} hi @alice and Bob Smith`;
 
     const response = await handler(
@@ -124,3 +128,43 @@ runAccountConformanceSuite({
     }
   },
 });
+
+/**
+ * Drives the adapter's real webhook path to produce a create followed by an edit of the
+ * same message — the "edit" scenario the shared suite requires of any adapter declaring
+ * "editNotifications". Two separate updates with distinct update_ids, exactly as Telegram
+ * delivers them.
+ */
+async function emitEdit(handler: (request: Request) => Promise<Response>): Promise<void> {
+  const sentAt = Math.floor(Date.now() / 1000);
+  const base = {
+    message_id: 7,
+    date: sentAt,
+    chat: { id: KNOWN_CHAT_ID, type: "supergroup", title: "Conformance" },
+    from: { id: 42, is_bot: false, first_name: "Conformance" },
+  };
+  const post = async (updateId: number, key: "message" | "edited_message", message: unknown) => {
+    const response = await handler(
+      new Request("https://example.com/telegram-webhook", {
+        method: "POST",
+        headers: {
+          "X-Telegram-Bot-Api-Secret-Token": WEBHOOK_SECRET,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ update_id: updateId, [key]: message }),
+      }),
+    );
+    if (response.status !== 200) {
+      throw new Error(
+        `expected the ${key} delivery to succeed, got ${String(response.status)}`,
+      );
+    }
+  };
+
+  await post(300, "message", { ...base, text: "before" });
+  await post(301, "edited_message", {
+    ...base,
+    text: "after",
+    edit_date: sentAt + 60,
+  });
+}
