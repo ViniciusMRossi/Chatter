@@ -16,7 +16,12 @@ import { UpdateDedupWindow } from "../dedup/update-dedup-window.js";
 import { mapTelegramError } from "../errors/map-telegram-error.js";
 import { mapMessage } from "../mapping/message.js";
 
-const CAPABILITIES: ReadonlySet<Capability> = new Set(["text", "reply", "attachments"]);
+const CAPABILITIES: ReadonlySet<Capability> = new Set([
+  "text",
+  "reply",
+  "attachments",
+  "mentions",
+]);
 /** Telegram's documented per-message text limit (characters). */
 const TELEGRAM_TEXT_LIMIT = 4096;
 /** Telegram's real send-side size limits per attachment kind (bytes). */
@@ -45,6 +50,14 @@ export class TelegramAccountAdapter implements AccountAdapter {
   readonly #dedupWindow = new UpdateDedupWindow();
   readonly #onNonFatalError: (message: string) => void;
   #botUserId: string | undefined;
+  /**
+   * The bot's own username, needed to recognize an `@handle` mention of itself — that form
+   * carries no user id, so id comparison alone would miss the most common way a bot is
+   * addressed. Read from the same `getMe()` response that supplies `#botUserId`, so it costs
+   * no extra call. Stays `undefined` only for a bot Telegram reports without a username, in
+   * which case handle-form mentions simply never match self.
+   */
+  #botUsername: string | undefined;
   #dispatch: ((message: InboundMessage) => void) | undefined;
 
   constructor(config: TelegramAccountConfig, options?: TelegramAccountAdapterOptions) {
@@ -76,6 +89,7 @@ export class TelegramAccountAdapter implements AccountAdapter {
       });
     }
     this.#botUserId = String(me.id);
+    this.#botUsername = me.username;
 
     try {
       await this.#api.setWebhook(this.#config.webhookUrl, {
@@ -207,7 +221,14 @@ export class TelegramAccountAdapter implements AccountAdapter {
     if (this.#botUserId === undefined) {
       throw new ChatterConfigurationError("cannot map an inbound message before start() completes");
     }
-    return mapMessage(message, this.#botUserId, this.#api, this.#config.botToken);
+    return mapMessage(
+      message,
+      this.#botUserId,
+      this.#api,
+      this.#config.botToken,
+      this.#botUsername,
+      this.#onNonFatalError,
+    );
   }
 
   /** Used by createTelegramWebhookHandler() to skip redelivered updates. */

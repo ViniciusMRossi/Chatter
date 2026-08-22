@@ -57,10 +57,49 @@ your bot at all. This is a Telegram platform behavior, not something Chatter con
 - `text` — sending and receiving plain text messages.
 - `reply` — replying to a specific prior message (Telegram's native reply-to-message feature).
 - `attachments` — sending and receiving a single image, video, or file per message (see below).
+- `mentions` — reporting the people referenced in an inbound message (see below). Inbound only:
+  composing a mention on an outgoing message is not supported this release.
 
 Not supported this release: `thread` (Telegram's "topics"/forum-thread feature). A send
 targeting a thread reference rejects with `ChatterUnsupportedCapabilityError` rather than
 silently sending to the wrong place.
+
+## Mentions
+
+Inbound messages carry `Message.mentions` when Telegram reports any, for both plain text
+(`entities`) and media captions (`caption_entities`). Offsets are UTF-16 code units — see
+`@chatter/core`'s README for the invariant and the emoji pitfall.
+
+Telegram has two mention forms, and only one of them can be resolved to a person:
+
+| Telegram entity | Looks like | Resolves to a `participant`? |
+|---|---|---|
+| `text_mention` | the person's display name | **Yes** — Telegram attaches a full user object |
+| `mention` | `@alice` | **No** — Telegram attaches no user id at all |
+
+This asymmetry is Telegram's, not a gap in this adapter. A `@handle` is not a stable identifier:
+usernames can be changed or transferred to a different person. Rather than derive a participant id
+from the handle — which would quietly point at whoever holds that name later — the mention is
+reported with its text and position and no `participant`. Use `isSelf` to detect being addressed,
+and treat `participant` as optional.
+
+`isSelf` is determined by comparing a `text_mention`'s user id against the bot's own id, and a
+`@handle` against the bot's own username (case-insensitively, as Telegram treats usernames). The
+bot's username is read from the `getMe()` call `start()` already makes, so this costs no extra
+request — and a `start()` that cannot reach Telegram already fails with
+`ChatterAuthenticationError`, rather than starting into a state where "was I addressed?" silently
+always answers no.
+
+### `/command@botname` is deliberately not a mention
+
+Telegram marks `/start@yourbot` with a single `bot_command` entity and never emits a mention
+entity for the `@yourbot` part. This adapter therefore reports **no** mention for it, and no self
+signal — reporting one would mean parsing the command text to decide a substring names a person,
+which is content interpretation this library does not do (`specs/006-mentions` FR-014/FR-017).
+
+The practical consequence: a bare `/start@yourbot` in a group does **not** tell your application
+it was addressed. If you handle commands, read `Message.text` for them; mentions and commands are
+separate concepts here on purpose.
 
 ## Attachments
 
@@ -113,7 +152,8 @@ change either:
   their conversation type maps defensively to `"unknown"` rather than crashing, but channel
   posting/reading isn't a supported flow yet.
 - Message edits, deletions, reactions, and interactive components (inline keyboards, commands)
-  are not normalized this release.
+  are not normalized this release. Mentions are inbound-only — see Mentions above; composing a
+  mention on an outgoing message is not supported.
 - Only a single attachment per message is supported (matching `@chatter/core`'s own
   one-attachment-per-send contract) — no multi-attachment albums.
 - Only webhook-based delivery is supported; long polling is not implemented.
