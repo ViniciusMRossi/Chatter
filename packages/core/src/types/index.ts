@@ -5,6 +5,7 @@ export * from "./provider.js";
 export * from "./account.js";
 export * from "./participant.js";
 export * from "./conversation.js";
+export * from "./mention.js";
 export * from "./message.js";
 export * from "./event.js";
 export * from "./delivery-result.js";

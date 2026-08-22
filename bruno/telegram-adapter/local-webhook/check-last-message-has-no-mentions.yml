@@ -1,0 +1,32 @@
+info:
+  name: Check Last Message Has No Mentions
+  type: http
+  seq: 14
+
+http:
+  method: GET
+  url: "{{local_last_message_url}}"
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("the command message was dispatched", function () {
+          expect(res.status).to.equal(200);
+          expect(res.body.text).to.equal("/start@chatter_test_bot");
+        });
+
+        test("it carries no mentions at all — the key is absent, not an empty array", function () {
+          expect(res.body.mentions).to.equal(undefined);
+          expect(Object.prototype.hasOwnProperty.call(res.body, "mentions")).to.equal(false);
+        });
+
+docs: |-
+  Only meaningful against `tests/bruno/webhook-test-server.ts` (see Check
+  Received Count After Direct for the same caveat).
+
+  Verifies both halves of the FR-017 decision at once: the command produced no
+  mention, AND absence is represented by the field being missing rather than an
+  empty array (specs/006-mentions FR-002), so a message referencing no one keeps
+  exactly the shape it had before mentions existed.

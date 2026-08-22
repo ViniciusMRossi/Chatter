@@ -1,0 +1,52 @@
+info:
+  name: Bot Command Is Not A Mention
+  type: http
+  seq: 13
+
+http:
+  method: POST
+  url: "{{local_webhook_url}}"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Telegram-Bot-Api-Secret-Token
+      value: "{{webhook_secret}}"
+  body:
+    type: json
+    data: |-
+      {
+        "update_id": 100008,
+        "message": {
+          "message_id": 8,
+          "date": 1700000000,
+          "chat": { "id": 556, "type": "supergroup", "title": "Team" },
+          "from": { "id": 777, "is_bot": false, "first_name": "Ada" },
+          "text": "/start@chatter_test_bot",
+          "entities": [
+            { "type": "bot_command", "offset": 0, "length": 23 }
+          ]
+        }
+      }
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("responds 200", function () {
+          expect(res.status).to.equal(200);
+        });
+
+docs: |-
+  Documents specs/006-mentions FR-017 as executable behavior: a command
+  addressed to a specific bot is NOT a mention of it.
+
+  Telegram marks `/start@chatter_test_bot` with a single bot_command entity and
+  never emits a mention entity for the @botname part. Reporting a mention here
+  would mean Chatter deciding on its own that a substring of a command denotes
+  a person — text interpretation, which FR-014 forbids. The accepted cost is
+  that a bare /command@botname does not tell an application it was addressed.
+
+  If this request starts failing, that is a deliberate specification change,
+  not a bug to fix in the mapper. Verified by the paired Check Last Message Has
+  No Mentions request.

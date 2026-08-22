@@ -58,3 +58,13 @@ variables:
       tests/bruno/webhook-test-server.ts (the CI test server) rather than the
       production example app — that's the only server exposing this
       introspection endpoint. Used by the "Check Received Count" requests.
+
+  - name: local_last_message_url
+    value: http://localhost:3300/last-message
+    enabled: true
+    secret: false
+    description: |-
+      Same caveat as local_received_count_url — only the CI test server exposes
+      this. Returns the most recently dispatched normalized message, so the
+      mention requests can assert on what was actually mapped rather than only
+      on HTTP status.

@@ -7,6 +7,8 @@ import { StubTelegramTransport, UNKNOWN_CHAT_ID } from "./support/stub-transport
 
 const WEBHOOK_SECRET = "s3cr3t-webhook-token";
 const KNOWN_CHAT_ID = 555;
+/** Matches StubTelegramTransport's default getMe() response. */
+const BOT_USERNAME = "chatter_test_bot";
 
 runAccountConformanceSuite({
   createAdapter: (): AccountAdapter => {
@@ -74,4 +76,51 @@ runAccountConformanceSuite({
     kind: "file",
     source: { data: Buffer.from("conformance attachment") },
   }),
+
+  // Required because this adapter declares "mentions" (specs/006-mentions). Drives the real
+  // webhook path — secret validation, parsing, entity mapping — rather than calling the
+  // mapper directly, so what the suite verifies is what a genuine delivery produces.
+  //
+  // One update covers every branch the contract requires: an @handle of the bot itself
+  // (unresolved + isSelf), an @handle of someone else (unresolved + not self), and a
+  // text_mention carrying a real user object (resolved + not self).
+  emitInboundWithMentions: async (adapter): Promise<void> => {
+    const handler = createTelegramWebhookHandler(adapter as TelegramAccountAdapter);
+    const text = `@${BOT_USERNAME} hi @alice and Bob Smith`;
+
+    const response = await handler(
+      new Request("https://example.com/telegram-webhook", {
+        method: "POST",
+        headers: {
+          "X-Telegram-Bot-Api-Secret-Token": WEBHOOK_SECRET,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          update_id: 200,
+          message: {
+            message_id: 2,
+            date: Math.floor(Date.now() / 1000),
+            chat: { id: KNOWN_CHAT_ID, type: "supergroup", title: "Conformance" },
+            from: { id: 42, is_bot: false, first_name: "Conformance" },
+            text,
+            entities: [
+              { type: "mention", offset: 0, length: BOT_USERNAME.length + 1 },
+              { type: "mention", offset: text.indexOf("@alice"), length: 6 },
+              {
+                type: "text_mention",
+                offset: text.indexOf("Bob Smith"),
+                length: 9,
+                user: { id: 4242, is_bot: false, first_name: "Bob", last_name: "Smith" },
+              },
+            ],
+          },
+        }),
+      }),
+    );
+    if (response.status !== 200) {
+      throw new Error(
+        `expected the mention webhook delivery to succeed, got ${String(response.status)}`,
+      );
+    }
+  },
 });

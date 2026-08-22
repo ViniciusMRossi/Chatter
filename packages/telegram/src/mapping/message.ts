@@ -3,6 +3,7 @@ import type { Message as TelegramMessage } from "@grammyjs/types";
 import type { Api } from "grammy";
 import { mapAttachment } from "./attachment.js";
 import { mapConversation } from "./conversation.js";
+import { mapMentions } from "./mention.js";
 import { mapParticipant } from "./participant.js";
 
 const UNKNOWN_SENDER_ID = "unknown";
@@ -41,13 +42,25 @@ export async function mapMessage(
   providerAccountId: string,
   api: Api,
   botToken: string,
+  botUsername?: string,
+  onNonFatalError?: (message: string) => void,
 ): Promise<InboundMessage> {
   const sender: Participant = message.from
     ? mapParticipant(message.from, providerAccountId)
     : { provider: "telegram", providerAccountId, providerParticipantId: UNKNOWN_SENDER_ID };
 
   const attachment = await mapMessageAttachment(message, api, botToken);
-  const text = attachment !== undefined ? message.caption : message.text;
+  // Telegram supplies a separate entity array per text field: `entities` indexes into `text`,
+  // `caption_entities` indexes into `caption`. Both are chosen by the SAME decision here on
+  // purpose — picking them independently lets offsets and the string they index into drift
+  // apart, which produces mentions whose text disagrees with their own position without
+  // throwing anything.
+  const { text, entities } =
+    attachment !== undefined
+      ? { text: message.caption, entities: message.caption_entities }
+      : { text: message.text, entities: message.entities };
+
+  const mentions = mapMentions(entities, text, providerAccountId, botUsername, onNonFatalError);
 
   return {
     id: String(message.message_id),
@@ -56,6 +69,7 @@ export async function mapMessage(
     conversation: mapConversation(message.chat, providerAccountId),
     ...(text !== undefined ? { text } : {}),
     ...(attachment !== undefined ? { attachments: [attachment] } : {}),
+    ...(mentions !== undefined ? { mentions } : {}),
     createdAt: new Date(message.date * 1000),
     ...(message.reply_to_message
       ? { replyToMessageId: String(message.reply_to_message.message_id) }

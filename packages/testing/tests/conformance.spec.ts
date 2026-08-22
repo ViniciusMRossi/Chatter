@@ -61,3 +61,17 @@ runAccountConformanceSuite({
   getUnknownConversation,
   getTestAttachment,
 });
+
+runAccountConformanceSuite({
+  // A capability set including "mentions", so the suite's inbound mention contract checks run
+  // for real. The two runs above declare no "mentions" and therefore exercise the companion
+  // negative check (inbound messages must carry no mentions) — both branches proven, same
+  // pattern as "attachments".
+  createAdapter: () => new FakeAccountAdapter({ capabilities: ["text", "mentions"] }),
+  getKnownConversation: makeKnownConversationGetter(),
+  getUnknownConversation,
+  getTestAttachment,
+  emitInboundWithMentions: (adapter) => {
+    (adapter as FakeAccountAdapter).emitInboundWithMentions();
+  },
+});

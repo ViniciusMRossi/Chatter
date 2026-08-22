@@ -49,3 +49,13 @@ variables:
     enabled: true
     secret: false
     description: The CI test server's introspection endpoint.
+
+  - name: local_last_message_url
+    value: http://localhost:3300/last-message
+    enabled: true
+    secret: false
+    description: |-
+      The CI test server's second introspection endpoint, returning the most
+      recently dispatched normalized message. Used by the mention requests,
+      which cannot be verified by HTTP status alone — a correctly and an
+      incorrectly mapped mention both return 200.
