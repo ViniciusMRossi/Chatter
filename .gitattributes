@@ -1,0 +1,7 @@
+# Canonical repository text line endings.
+# Linux/container-consumed text stays LF, including shell-sourced .env files.
+* text=auto eol=lf
+
+# Native cmd.exe scripts are the standard CRLF exception.
+*.bat text eol=crlf
+*.cmd text eol=crlf

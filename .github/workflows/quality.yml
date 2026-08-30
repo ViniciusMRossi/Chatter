@@ -1,0 +1,17 @@
+name: Project Verification
+
+on:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Build canonical development container
+        run: |
+          export SDD_HOST_UID="$(id -u)" SDD_HOST_GID="$(id -g)"
+          docker compose build dev
+      - name: Run project verification in canonical container
+        run: |
+          bash scripts/dev.sh verify

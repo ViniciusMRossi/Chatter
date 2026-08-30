@@ -1,0 +1,22 @@
+# Secrets/local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Agent-local settings and auth
+.claude/settings.local.json
+.claude/*.local.*
+.specify/extensions/**/*-config.local.yml
+
+# Common build/editor noise
+.DS_Store
+Thumbs.db
+node_modules/
+dist/
+build/
+coverage/
+.pytest_cache/
+__pycache__/
+*.log

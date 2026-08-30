@@ -1,0 +1,43 @@
+name: Tier 1 Security
+
+on:
+  pull_request:
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Semgrep changed-code SAST
+        # SEMGREP_BASELINE_REF is the explicit diff-aware contract for this CE scan.
+        env:
+          SEMGREP_BASELINE_REF: origin/${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          source .sdd/tool-versions.env
+          docker run --rm \
+            -v "$PWD:/src" \
+            -w /src \
+            -e SEMGREP_BASELINE_REF \
+            --entrypoint sh \
+            "$SEMGREP_IMAGE" \
+            -lc 'git config --global --add safe.directory /src && semgrep ci --config p/security-audit --config p/owasp-top-ten'
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Gitleaks current-tree secrets scan
+        run: |
+          set -euo pipefail
+          source .sdd/tool-versions.env
+          docker run --rm \
+            -v "$PWD:/repo" \
+            -w /repo \
+            "$GITLEAKS_IMAGE" \
+            dir --redact --verbose /repo
+
+# Tier 2 is deliberately absent from the development container and automatic CI.
+# It is human-triggered only in an authorized environment.

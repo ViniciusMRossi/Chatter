@@ -1,0 +1,3 @@
+# Configure at least one real owner before enabling "Require review from Code Owners".
+# Example:
+# * @your-github-handle

@@ -1,0 +1,8 @@
+{
+  "name": "SDD Project",
+  "dockerComposeFile": "../compose.yaml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
+  "shutdownAction": "stopCompose"
+}

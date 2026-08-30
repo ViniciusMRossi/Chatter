@@ -1,0 +1,21 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        SDD_HOST_UID: "${SDD_HOST_UID:-1000}"
+        SDD_HOST_GID: "${SDD_HOST_GID:-1000}"
+    working_dir: /workspace
+    user: vscode
+    environment:
+      HOME: /sdd-home
+    volumes:
+      - .:/workspace
+      - sdd-home:/sdd-home
+    command: ["sleep", "infinity"]
+    tty: true
+    stdin_open: true
+
+volumes:
+  sdd-home:
