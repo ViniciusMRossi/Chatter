@@ -14,14 +14,38 @@ them, so they must be decided and recorded during Roadmap Phase 0 rather than as
 
 ## Approved stack
 
-- **Language/runtime:** Node.js + TypeScript. Exact Node engine range per package and the
-  TypeScript target/lib baseline are a **Phase 0 decision**.
-- **Package/dependency manager:** **Phase 0 decision** (package manager and workspace
-  configuration).
+- **Language/runtime:** Node.js + TypeScript. Engine range `>=24.0.0` declared by the root manifest
+  and by every workspace member; the development image and CI pin Node **24.20.0** exactly. TypeScript
+  is pinned to **6.0.3** as the single root devDependency. The shared `tsconfig.base.json` targets
+  `ES2024` with `module`/`moduleResolution` `nodenext`, and states every option whose default changes
+  in TypeScript 7 explicitly (plus `stableTypeOrdering`) so that migration stays mechanical.
+  *(Recorded by F1 — Repository / Workspace Foundation.)*
+- **Package/dependency manager:** **pnpm 11.24.0**, provisioned in the development image and
+  declared in the root `packageManager` field. Workspace members are declared in
+  `pnpm-workspace.yaml` (`packages/*`, `apps/*`), which also carries the pnpm settings — pnpm 11 reads
+  settings from that file and treats `.npmrc` as auth/registry only, so no `.npmrc` exists. Internal
+  dependencies use the `workspace:*` protocol. Six settings are declared: `nodeLinker: isolated`,
+  `pmOnFail: error`, `engineStrict: true`, `blockExoticSubdeps: true`, `minimumReleaseAge: 10080` and
+  `trustPolicy: no-downgrade`. The last three are supply-chain policy **adopted after PR #1 as a
+  Tier 1 (Semgrep) correction**, not during initial planning: `blockExoticSubdeps` makes pnpm's
+  current secure default explicit and stops transitive dependencies resolving through untrusted
+  exotic sources; `minimumReleaseAge: 10080` is a **seven-day** delay in minutes, replacing pnpm 11's
+  built-in one-day default, and because it is set explicitly pnpm's strict minimum-release-age
+  behaviour applies by default; `trustPolicy: no-downgrade` **fails installation** when a package
+  version's trust evidence is weaker than that of an earlier-published version. No exception key is
+  configured — no `minimumReleaseAgeExclude`, `trustPolicyExclude`, `trustPolicyIgnoreAfter` or
+  `trustLockfile`. Changing or excepting any of these is a security-posture decision and requires the
+  substitution procedure below. *(Recorded by F1.)*
 - **Framework/library baseline:** none for `@chatter/core`. Core is framework-neutral and carries
   no HTTP framework dependency — no Express/Fastify in Core
   ([`Architecture/Project-Context.md`](Architecture/Project-Context.md) §20). Provider SDKs are
   listed under [Provider SDK strategy](#provider-sdk-strategy).
+- **Module format and build tooling:** **ESM-only** — every workspace member, library and
+  application alike, declares `"type": "module"`, and no CommonJS artifact is produced or published.
+  Only the six library packages expose a public entry point, via a `types`-before-`default` `exports`
+  map; the two applications intentionally expose **no** `exports` map, because they are private and
+  are not consumed as packages. Built with the TypeScript compiler alone (`tsc -b`) over **TypeScript
+  project references**; **no bundler**, and no monorepo task orchestrator. *(Recorded by F1.)*
 - **Unit-test framework:** **Phase 0 decision**. Chatter's reusable contract suites live in
   `packages/testing` and must be runnable by whichever runner Phase 0 selects.
 - **Integration-test framework:** **Phase 0 decision** for the runner. **Bruno** is the approved
@@ -29,12 +53,15 @@ them, so they must be decided and recorded during Roadmap Phase 0 rather than as
   ([`Architecture/Implementation-Roadmap.md`](Architecture/Implementation-Roadmap.md) §9, §23).
 - **UI/E2E tooling (if any):** **Phase 0 or later decision**. Example-client E2E is expected only
   "where justified" ([`Adoption/Integration-Guide.md`](Adoption/Integration-Guide.md) §6).
-- **Build command:** **Phase 0 decision.**
+- **Build command:** `pnpm run build` (`tsc -b` over the root solution project). *(Recorded by F1.)*
 - **Lint command:** **Phase 0 decision.**
 - **Typecheck command:** **Phase 0 decision.**
 - **Unit test command:** **Phase 0 decision.**
 - **Integration test command:** **Phase 0 decision.**
-- **Full verification command (optional):** **Phase 0 decision.**
+- **Full verification command (optional):** `pnpm install --frozen-lockfile && pnpm run verify`,
+  mirrored in `.sdd/commands.env` as `SDD_FULL_VERIFY_COMMAND`. `scripts/verify.sh` short-circuits on
+  this variable, so the granular build/lint/typecheck/unit/integration variables are deliberately left
+  empty until F2 populates them. *(Recorded by F1.)*
 
 Mirror executable verification commands in `.sdd/commands.env` once they exist. Extend the
 workflow layer's CI baseline with Chatter contract, Bruno, provider, and E2E jobs rather than

@@ -1,0 +1,68 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  apps/example-client:
+    dependencies:
+      '@chatter/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  apps/validation-server:
+    dependencies:
+      '@chatter/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+
+  packages/core: {}
+
+  packages/discord:
+    dependencies:
+      '@chatter/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/slack:
+    dependencies:
+      '@chatter/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/telegram:
+    dependencies:
+      '@chatter/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/testing:
+    dependencies:
+      '@chatter/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/whatsapp:
+    dependencies:
+      '@chatter/core':
+        specifier: workspace:*
+        version: link:../core
+
+packages:
+
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+snapshots:
+
+  typescript@6.0.3: {}

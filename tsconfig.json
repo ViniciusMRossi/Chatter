@@ -1,0 +1,29 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./packages/testing"
+    },
+    {
+      "path": "./packages/whatsapp"
+    },
+    {
+      "path": "./packages/slack"
+    },
+    {
+      "path": "./packages/telegram"
+    },
+    {
+      "path": "./packages/discord"
+    },
+    {
+      "path": "./apps/validation-server"
+    },
+    {
+      "path": "./apps/example-client"
+    }
+  ]
+}

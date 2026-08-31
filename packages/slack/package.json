@@ -1,0 +1,17 @@
+{
+  "name": "@chatter/slack",
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@chatter/core": "workspace:*"
+  }
+}

@@ -54,3 +54,33 @@ USER vscode
 ENV HOME=/sdd-home
 
 # Project-specific runtimes and tools belong below this line and must be recorded in Docs/Tech-Stack.md.
+
+# Chatter F1 project runtime: Node.js + pnpm. Recorded in Docs/Tech-Stack.md.
+# Installed to /usr/local (never under HOME) because the sdd-home volume masks image content
+# at HOME, and because /usr/local/bin is on the login-shell PATH used by scripts/verify.sh.
+# Corepack is deliberately not used: Node documents its removal in v25+.
+USER root
+
+ARG CHATTER_NODE_VERSION=24.20.0
+ARG CHATTER_PNPM_VERSION=11.24.0
+
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) node_arch='x64' ;; \
+      arm64) node_arch='arm64' ;; \
+      *) echo "Unsupported architecture for the pinned Node.js tarball: $arch" >&2; exit 1 ;; \
+    esac; \
+    tarball="node-v${CHATTER_NODE_VERSION}-linux-${node_arch}.tar.xz"; \
+    cd /tmp; \
+    curl -fsSLO "https://nodejs.org/dist/v${CHATTER_NODE_VERSION}/${tarball}"; \
+    curl -fsSLO "https://nodejs.org/dist/v${CHATTER_NODE_VERSION}/SHASUMS256.txt"; \
+    sha256sum -c --ignore-missing SHASUMS256.txt; \
+    tar -xJf "${tarball}" -C /usr/local --strip-components=1 --no-same-owner; \
+    rm -f "${tarball}" SHASUMS256.txt; \
+    npm install -g "pnpm@${CHATTER_PNPM_VERSION}"; \
+    npm cache clean --force; \
+    node --version; \
+    pnpm --version
+
+USER vscode

@@ -563,3 +563,50 @@ change is unverifiable on its own, since nothing can run until there is a worksp
 | D16 | Release automation | Deferred | No changesets until first publish |
 | D17 | Security baseline | Frozen | Lockfile + `--frozen-lockfile`; Dependabot as a setting |
 | — | Frozen layout, boundaries, provider order, TDD, Bruno-as-tool | Frozen | No decision required |
+
+---
+
+## 16. Human ratification of §14 (recorded 2026-08-31)
+
+The decision-maker reviewed this brief and ratified the technical direction below. This section
+records the human answers against every item §14 raised. It does not change this brief's
+non-canonical status: the canonical behavioural contract remains the human-approved `spec.md`.
+
+### 16.1 Blocking items (§14.1–§14.11)
+
+| § | Item | Human decision | Status |
+|---|---|---|---|
+| 1 | **D1** Package manager | **pnpm** — workspace ergonomics, strict dependency resolution, useful enforcement of package boundaries, appropriate monorepo behaviour, good CI/container behaviour, acceptable operational complexity. npm workspaces and Yarn are explicitly not substitutable. | Resolved |
+| 2 | **D2** Node baseline | **Node `>=24`.** An exact Node 24.x release MUST be pinned in reproducible execution surfaces (development image / CI) where Phase 0 requires an exact pin; selecting that exact patch is implementation-planning work and MUST NOT be invented here. The baseline must support native `Error.cause`, Web `ReadableStream<Uint8Array>` and modern ESM behaviour. | Resolved (exact patch selection delegated to planning) |
+| 3 | **D3** TypeScript line | **TypeScript 6.** Configure so that a future TypeScript 7 migration is reasonably mechanical. TypeScript 7 MUST NOT be adopted during F1. | Resolved |
+| 4 | **D4** Module format | **ESM-only.** Chatter does not dual-publish CommonJS artifacts in the current design. Public package entry graphs MUST remain synchronously loadable and MUST NOT depend on top-level await where doing so would unnecessarily break modern Node `require(esm)` interoperability. This is not a promise of universal legacy CommonJS compatibility. | Resolved |
+| 5 | **D6** Lint / format | **ESLint + typescript-eslint with type-aware linting**, prioritising correctness and architectural hygiene; **Prettier** for formatting, kept conceptually separate from lint correctness. Biome not adopted. | Resolved — belongs to **F2** |
+| 6 | **D7** Test runner | **Vitest.** It must later support contract-first TDD, unit tests, contract tests, provider adapter tests, fake-provider infrastructure, integration tests, deterministic CI, and coverage where useful. No Core or provider tests in F1. | Resolved — belongs to **F2** |
+| 7 | **D8** npm scope | `@chatter/*` is ratified as the **project/package naming convention**. Ownership/control of the npm `@chatter` scope is **not** evidenced in this repository and is **not** claimed. npm scope ownership verification is recorded as a **pre-publication requirement**. F1 publishes nothing and creates no release automation, so this does not block F1. | Partially resolved — naming ratified; scope ownership **deferred to pre-publication**, non-blocking for F1 |
+| 8 | **D12** Dockerfile change | **Approved.** The Phase 0 repository foundation may modify the existing SpecMan development image/container configuration to add the JavaScript runtime and package-manager tooling Chatter requires. SpecMan's container-first execution model MUST be preserved, and no parallel Chatter-specific development environment may be created. | Resolved |
+| 9 | **D14** LICENSE | **MIT.** Apache-2.0 is not substitutable. Phase 0 may create the LICENSE artifact in whichever decomposed feature owns it — not F1. | Resolved — belongs to **F3** |
+| 10 | **D15** CODEOWNERS | Owner **`* @ViniciusMRossi`**. While the repository has only one maintainer: **required approvals = 0** and **required Code Owner review = OFF**. The repository may still require pull requests, status checks, conversation resolution, no force pushes and no branch deletion per existing governance. No GitHub rule may leave the sole maintainer unable to merge their own reviewed PRs. Revisit when a second appropriate maintainer exists. | Resolved — belongs to **F3** |
+| 11 | Feature decomposition (§15) | **Approved:** F1 Repository / Workspace Foundation → F2 Quality / Test Tooling, with F3 Governance / Configuration able to proceed independently where its dependencies permit. Each remains a separate SpecMan feature / reviewable PR unless later planning proves a different boundary necessary. | Resolved |
+
+### 16.2 Non-blocking items (§14.12–§14.14)
+
+| § | Item | Human decision | Status |
+|---|---|---|---|
+| 12 | **D11** `.sdd/commands.env` | The exact schema MUST be read from the repository during F1 planning rather than invented. Read on 2026-08-31: the file defines exactly six variables and no install variable — `SDD_BUILD_COMMAND`, `SDD_LINT_COMMAND`, `SDD_TYPECHECK_COMMAND`, `SDD_UNIT_TEST_COMMAND`, `SDD_INTEGRATION_TEST_COMMAND`, `SDD_FULL_VERIFY_COMMAND`. F1/F2 should populate the canonical SpecMan verification commands once the underlying commands exist. Not a blocker for `/speckit-specify`. | Resolved (schema confirmed); population belongs to **F1/F2** |
+| 13 | **R1** `.specify/` ownership defect | Resolved externally in SpecMan v0.1.1 and surgically repaired in this repository. Container-side writability re-verified on 2026-08-31 (`uid=1000(vscode)`; a write under `.specify/` succeeds). MUST NOT be reopened as a Phase 0 implementation issue. | Resolved — outside Phase 0 scope |
+| 14 | **D16** Release automation | **Confirmed deferred.** No Changesets or equivalent release automation during F1. Re-evaluate closer to the first real package publication. | Resolved — deferred |
+
+### 16.3 Additional ratified direction
+
+| Item | Human decision |
+|---|---|
+| **D5** Build tooling | **`tsc -b` with TypeScript project references, no bundler.** tsup, Rollup, esbuild bundling, Turborepo and Nx MUST NOT be introduced unless a future approved feature demonstrates a concrete need. |
+| **D9** Boundary enforcement | Approved as a **layered** approach: pnpm workspace resolution + TypeScript project references + ESLint dependency/import constraints + manifest/package-boundary meta-tests where appropriate. Provider SDK types MUST NOT leak into Core; provider packages MUST NOT depend on one another; production packages MUST NOT depend on `@chatter/testing`. |
+| Monorepo orchestrator | **None.** Turborepo and Nx are deferred and MUST NOT be introduced during Phase 0 unless a later human-approved decision changes this. |
+
+### 16.4 Carried forward, not resolved here
+
+- **npm `@chatter` scope ownership** — must be independently evidenced **before any publication**. Does not block F1.
+- **Exact Node 24.x and TypeScript 6.x pins** — confirm against the then-current releases during F1 planning/implementation.
+- **R2 strict symlinked install behaviour on the Windows bind mount** — an operational unknown to be exercised during F1 implementation, with the recorded fallbacks (a flat linker, or moving `node_modules` to a container-side volume as a separate deliberate decision).
+- **Node 26 in the CI matrix** once it reaches LTS — a later decision, not Phase 0.
