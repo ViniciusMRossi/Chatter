@@ -1,0 +1,15 @@
+# Chatter workspace members. pnpm 11 reads its settings from this file; .npmrc is
+# auth/registry only and would silently ignore anything placed there.
+packages:
+  - 'packages/*'
+  - 'apps/*'
+
+# Fail loudly if the running pnpm differs from the declared packageManager,
+# instead of silently downloading another version at verification time.
+pmOnFail: error
+
+# Refuse to install under a Node that does not satisfy `engines`.
+engineStrict: true
+
+# Strict, non-hoisted layout: a package resolves only what it declares (FR-025).
+nodeLinker: isolated
