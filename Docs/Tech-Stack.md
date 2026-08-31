@@ -30,10 +30,12 @@ them, so they must be decided and recorded during Roadmap Phase 0 rather than as
   no HTTP framework dependency — no Express/Fastify in Core
   ([`Architecture/Project-Context.md`](Architecture/Project-Context.md) §20). Provider SDKs are
   listed under [Provider SDK strategy](#provider-sdk-strategy).
-- **Module format and build tooling:** **ESM-only** — every package declares `"type": "module"` and
-  a `types`-before-`default` `exports` map; no CommonJS artifact is produced or published. Built with
-  the TypeScript compiler alone (`tsc -b`) over **TypeScript project references**; **no bundler**, and
-  no monorepo task orchestrator. *(Recorded by F1.)*
+- **Module format and build tooling:** **ESM-only** — every workspace member, library and
+  application alike, declares `"type": "module"`, and no CommonJS artifact is produced or published.
+  Only the six library packages expose a public entry point, via a `types`-before-`default` `exports`
+  map; the two applications intentionally expose **no** `exports` map, because they are private and
+  are not consumed as packages. Built with the TypeScript compiler alone (`tsc -b`) over **TypeScript
+  project references**; **no bundler**, and no monorepo task orchestrator. *(Recorded by F1.)*
 - **Unit-test framework:** **Phase 0 decision**. Chatter's reusable contract suites live in
   `packages/testing` and must be runnable by whichever runner Phase 0 selects.
 - **Integration-test framework:** **Phase 0 decision** for the runner. **Bruno** is the approved

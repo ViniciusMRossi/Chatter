@@ -504,7 +504,7 @@ requirement-to-probe coverage map, are in `quickstart.md`.
 | `P-UNDECLARED` | assertion (mutating) | 9 | under a `trap`, replace `packages/slack/src/index.ts` with an import of `@chatter/telegram` — an edge `slack` does not declare — capture the **raw** build status, print it as RED evidence, assert it is non-zero, restore, assert byte-identical restoration, then assert a clean GREEN install and build | FR-025, SC-005 |
 | `P-BASELINE` | assertion | 10 | a no-dependency `node -e` that **throws** unless `new Error('x', { cause: 1 }).cause` is set and `typeof ReadableStream === 'function'` | FR-009, SC-008 |
 | `P-ZERO` | assertion + **inspection** | 11 | *assertion*: `cmp` each of the eight entry modules against a canonical `export {};` file (byte-identical, trailing newline included), assert the count is 8, assert none of the **nine enumerated project manifests** declares `publishConfig` or a publish script, and sweep tracked *and* untracked files with `git ls-files --cached --others --exclude-standard` for release-automation artefacts. *Inspection*: reading the six emitted `.d.ts` — not the primary evidence, since `P-LOAD` asserts zero own keys at runtime | FR-035, SC-009, SC-010 |
-| `P-VERIFY` | assertion | 12 | assert `SDD_FULL_VERIFY_COMMAND` equals exactly `pnpm install --frozen-lockfile && pnpm run verify`, the five granular variables are empty, and the root `verify` script is exactly `pnpm run build`; record the lock digest and **delete every `node_modules` and every `dist`**; run `bash scripts/dev.sh verify`; then assert the virtual store exists, the lock digest is unchanged, and all eight members were built | FR-029 – FR-031, SC-001, SC-011, SC-012 |
+| `P-VERIFY` | assertion | 12 | assert `SDD_FULL_VERIFY_COMMAND` equals exactly `pnpm install --frozen-lockfile && pnpm run verify`, the five granular variables are empty, and the root `verify` script is exactly `pnpm run build`; record the lock digest, then establish a genuinely cold state — run the approved `pnpm run clean` (`tsc -b --clean`) **while the pinned compiler is still installed**, delete every `node_modules` and every member `dist`, and assert that no member `*.tsbuildinfo` survives; run `bash scripts/dev.sh verify`; then assert the virtual store exists, the lock digest is unchanged, and all eight members were built | FR-029 – FR-031, SC-001, SC-011, SC-012 |
 | `P-TECHSTACK` | assertion + **inspection** | 13 | *assertion*: `Docs/Tech-Stack.md` records the exact Node, pnpm and TypeScript pins, ESM-only, `tsc -b` and project references, **and still contains `Phase 0 decision` placeholders** so F1 has not performed F3's rewrite. *Inspection*: reading the diff to confirm the update is narrow | FR-028 (recording), SC-013 |
 | `P-WORKFLOW` | assertion | 14 | `bash scripts/dev.sh check` exits 0 | Adoption Checklist wiring |
 | `P-CI` | assertion | 15 | assert `git diff --stat main -- .github/` is empty **and** `git status --porcelain --untracked-files=all -- .github/` is empty, so committed, staged, modified and untracked workflow files are all caught | FR-031, SC-010 |
@@ -550,11 +550,20 @@ Scope note: `P-LOAD` tests **Chatter's own entry graphs** for synchronous loadab
 is not, and must not be presented as, a promise of universal legacy CommonJS compatibility.
 Applications are excluded — they declare no `exports` map and are not consumable packages.
 
-**On `P-VERIFY`.** Deleting every `node_modules` *and* every `dist` before invoking
+**On `P-VERIFY`.** Establishing a genuinely cold state before invoking
 `bash scripts/dev.sh verify` is what turns SC-012 into a proof rather than a re-run over a warm tree.
 The post-run assertions then fail if installation was skipped, if the lock was not treated as frozen,
 or if the build was bypassed — the three ways the verification surface could appear green while
 proving nothing.
+
+Cold means three things, not two. `tsc` writes `tsconfig.tsbuildinfo` **beside each member's
+`tsconfig.json`, not inside `dist/`**, so deleting `node_modules` and `dist` alone leaves stale build
+info behind and `tsc -b` reports every project up to date without emitting anything — verification
+exits 0 having built nothing. The probe therefore runs the approved root script `pnpm run clean`
+(`tsc -b --clean`, D2) first, while the pinned compiler is still installed, then deletes the install
+and output directories, and asserts that no member `*.tsbuildinfo` survives. This changes no root
+script, no `SDD_FULL_VERIFY_COMMAND`, no manifest and no build tool — only how the probe prepares the
+state it measures.
 
 **On `P-ZERO`.** Three scoping choices are deliberate. The entry-module comparison uses `cmp` against
 a canonical file, so "byte-identical" is literally true including the trailing newline, rather than a
@@ -607,9 +616,11 @@ one to diagnose. This is the sequencing input for `/speckit-tasks`; it is not a 
     - `P-BUILD`, `P-ORDER`, `P-LOAD`, and the emitted-`.d.ts` half of `P-ZERO`, require a completed
       build. `P-LOAD` depends on `P-BUILD` specifically, because it loads emitted `dist/` output.
     - `P-TECHSTACK` requires the `Docs/Tech-Stack.md` update from step 11.
-    - `P-VERIFY` deliberately deletes every `node_modules` and every `dist` before invoking the
-      canonical entry point, so run it **after** the other build-dependent probes — or re-run
-      `pnpm run build` afterwards if a later probe needs build output.
+    - `P-VERIFY` deliberately clears TypeScript build info (`pnpm run clean`) and deletes every
+      `node_modules` and every member `dist` before invoking the canonical entry point, so run it
+      **after** the other build-dependent probes — or re-run `pnpm run build` afterwards if a later
+      probe needs build output. Clearing build info is required, not incidental: `tsc -b` treats
+      surviving `tsconfig.tsbuildinfo` files as proof the projects are current.
     - Every remaining probe is order-independent.
 
     `P-UNDECLARED` is recorded as observed-failure → restore → observed-pass.

@@ -781,7 +781,7 @@ bash scripts/dev.sh exec bash -lc 'cat packages/*/dist/index.d.ts'
 Run the three steps in order. Steps 1 and 3 are container probes; step 2 is the canonical host-side
 entry point, which starts its own container run.
 
-**Step 1 — assert the wiring, then remove every installed dependency.**
+**Step 1 — assert the wiring, then establish a genuinely cold build state.**
 
 ```bash
 bash scripts/dev.sh exec bash -ls <<'PROBE'
@@ -807,11 +807,25 @@ done
 
 # Record the lock digest, then go cold.
 sha256sum pnpm-lock.yaml | cut -d' ' -f1 > /tmp/lock.before
-rm -rf node_modules packages/*/node_modules apps/*/node_modules dist packages/*/dist apps/*/dist
-[ ! -d node_modules ] || fail "node_modules must be absent before the cold verification run"
-[ ! -d packages/core/dist ] || fail "build output must be absent before the cold verification run"
 
-echo "OK: wiring asserted; workspace is cold (no node_modules, no dist)"
+# Clear TypeScript build state FIRST, while the installed pinned compiler is still available.
+# `tsc` writes tsconfig.tsbuildinfo NEXT TO each member tsconfig.json, not inside dist/, so
+# deleting dist/ alone leaves stale build info and `tsc -b` reports every project "up to date"
+# and emits nothing. `pnpm run clean` is the approved root script (`tsc -b --clean`) and removes
+# outputs and build info together.
+pnpm run clean
+
+rm -rf node_modules packages/*/node_modules apps/*/node_modules dist packages/*/dist apps/*/dist
+
+[ ! -d node_modules ] || fail "node_modules must be absent before the cold verification run"
+for m in packages/core packages/testing packages/whatsapp packages/slack packages/telegram \
+         packages/discord apps/validation-server apps/example-client; do
+  [ ! -d "$m/dist" ] || fail "$m/dist must be absent before the cold verification run"
+done
+stale="$(find . -name '*.tsbuildinfo' -not -path './node_modules/*' -not -path './.pnpm-store/*' | wc -l)"
+[ "$stale" -eq 0 ] || fail "$stale workspace-member *.tsbuildinfo files survive; the state is not cold"
+
+echo "OK: wiring asserted; workspace is cold (no node_modules, no member dist, no build info)"
 PROBE
 ```
 
@@ -850,11 +864,18 @@ PROBE
 
 **Expected**: exit 0 and the `OK:` line.
 
-This is what makes SC-012 a real proof rather than a re-run over a warm tree. Because step 1 deletes
-both `node_modules` and every `dist/`, step 3 fails if installation was skipped, if the lock was not
-treated as frozen, or if the build was bypassed — the three ways the verification surface could
-appear green while proving nothing. An empty lint or test variable is the correct F1 state, not an
-oversight; those stages belong to F2.
+This is what makes SC-012 a real proof rather than a re-run over a warm tree. Because step 1 clears
+build info **and** deletes both `node_modules` and every member `dist/`, step 3 fails if installation
+was skipped, if the lock was not treated as frozen, or if the build was bypassed — the three ways the
+verification surface could appear green while proving nothing. An empty lint or test variable is the
+correct F1 state, not an oversight; those stages belong to F2.
+
+> **Why `pnpm run clean` is not optional here.** Removing `dist/` alone is insufficient:
+> `tsconfig.tsbuildinfo` lives beside each member's `tsconfig.json`, survives that deletion, and makes
+> `tsc -b` treat every project as up to date. Verification then exits 0 having rebuilt **nothing** —
+> reproduced on this repository, where `bash scripts/dev.sh verify` returned 0 while 0 of 8 outputs
+> existed. A real cold clone is unaffected, because `*.tsbuildinfo` is git-ignored and never reaches a
+> fresh checkout; the hazard is a working tree whose `dist/` was removed by hand.
 
 Because `scripts/verify.sh` short-circuits on `SDD_FULL_VERIFY_COMMAND`, the granular variables would
 never execute even if set; leaving them empty keeps the configuration honest.

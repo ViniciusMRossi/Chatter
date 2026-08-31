@@ -15,4 +15,3 @@
 **Command:** `pnpm install --frozen-lockfile && pnpm run build (after restoring packages/slack/src/index.ts byte-identically)`
 
 **Observed result:** PASSED, exit 0: all eight members build and the entry module is byte-identical to the canonical 'export {};' file. No residual state.
-
