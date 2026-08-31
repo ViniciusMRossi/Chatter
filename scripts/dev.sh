@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export SDD_HOST_UID="${SDD_HOST_UID:-$(id -u)}"
-export SDD_HOST_GID="${SDD_HOST_GID:-$(id -g)}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# One authoritative uid/gid policy, shared with the bootstrap entrypoint and
+# with scripts/dev.ps1. Resolving it here (rather than inline) is what keeps a
+# later `dev.sh up` from remapping the development user away from the uid that
+# owns this project's existing workflow state.
+# shellcheck source=scripts/resolve-dev-user.sh
+source "$SCRIPT_DIR/resolve-dev-user.sh"
+sdd_resolve_dev_user
 
 is_running() {
   [[ -n "$(docker compose ps --status running -q dev 2>/dev/null)" ]]
@@ -23,6 +30,22 @@ resolve_home_volume() {
   printf '%s\n' "$volume_name"
 }
 
+# A development container that cannot write this project's existing workflow
+# state is precisely the failure the uid/gid policy exists to prevent. Report it
+# at the boundary instead of letting the next Spec Kit command fail partway
+# through. `up` still succeeds: the documented repair runs through this
+# container, so it must remain reachable.
+warn_if_workspace_unwritable() {
+  [[ -f scripts/check-workspace-writable.sh ]] || return 0
+  local report
+  if ! report="$(docker compose exec -T dev bash scripts/check-workspace-writable.sh 2>&1)"; then
+    printf '%s
+' "$report" >&2
+    echo "Development container identity: $(docker compose exec -T dev id 2>/dev/null || echo unknown)" >&2
+    echo "See Docs/Workflow.md (workspace ownership) for the one-time repair." >&2
+  fi
+}
+
 require_running() {
   if ! is_running; then
     echo "Development container is not running. Run: scripts/dev.sh up" >&2
@@ -35,6 +58,7 @@ case "${1:-}" in
     docker compose up -d --build dev
     sleep 1
     is_running || { echo "Development container failed to stay running. Run: docker compose ps -a && docker compose logs dev" >&2; exit 1; }
+    warn_if_workspace_unwritable
     ;;
   down)
     docker compose down

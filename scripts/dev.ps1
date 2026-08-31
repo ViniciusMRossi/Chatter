@@ -7,9 +7,12 @@ param(
 )
 $ErrorActionPreference='Stop'
 
-# Docker Desktop bind mounts are normally mapped to the image's default dev uid/gid.
-$env:SDD_HOST_UID = if ($env:SDD_HOST_UID) { $env:SDD_HOST_UID } else { '1000' }
-$env:SDD_HOST_GID = if ($env:SDD_HOST_GID) { $env:SDD_HOST_GID } else { '1000' }
+# One authoritative uid/gid policy, shared with the bootstrap entrypoint and
+# with scripts/dev.sh. Resolving it here (rather than inline) is what keeps a
+# later `dev.ps1 up` from remapping the development user away from the uid that
+# owns this project's existing workflow state.
+. (Join-Path $PSScriptRoot 'resolve-dev-user.ps1')
+Resolve-SddDevUser | Out-Null
 
 function Test-DevRunning {
   $containerId = docker compose ps --status running -q dev 2>$null
@@ -29,6 +32,22 @@ function Get-HomeVolumeName {
   return $volumeName.Trim()
 }
 
+# A development container that cannot write this project's existing workflow
+# state is precisely the failure the uid/gid policy exists to prevent. Report it
+# at the boundary instead of letting the next Spec Kit command fail partway
+# through. `up` still succeeds: the documented repair runs through this
+# container, so it must remain reachable.
+function Warn-IfWorkspaceUnwritable {
+  if (-not (Test-Path './scripts/check-workspace-writable.sh')) { return }
+  docker compose exec -T dev bash scripts/check-workspace-writable.sh | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    $identity = (docker compose exec -T dev id) -join ' '
+    Write-Warning "Development container identity: $identity"
+    Write-Warning 'See Docs/Workflow.md (workspace ownership) for the one-time repair.'
+  }
+  $global:LASTEXITCODE = 0
+}
+
 function Require-DevRunning {
   if (-not (Test-DevRunning)) {
     throw 'Development container is not running. Run: ./scripts/dev.ps1 up'
@@ -41,6 +60,7 @@ switch ($Action) {
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     Start-Sleep -Seconds 1
     if (-not (Test-DevRunning)) { throw 'Development container failed to stay running. Run: docker compose ps -a; docker compose logs dev' }
+    Warn-IfWorkspaceUnwritable
   }
   'down' { docker compose down }
   'reset-home' {

@@ -42,6 +42,9 @@ if ! grep -Eq '^[[:space:]]*[^#[:space:]].*@[A-Za-z0-9_.-]+' .github/CODEOWNERS;
   echo "warning: CODEOWNERS has no active owner yet; configure before enabling Code Owner branch protection."
 fi
 
+echo "==> Mutable workflow state is writable by the development user"
+bash scripts/check-workspace-writable.sh "$ROOT"
+
 echo "==> Container marker"
 [[ -f /.dockerenv ]] || echo "warning: workflow-check is not running inside Docker"
 
