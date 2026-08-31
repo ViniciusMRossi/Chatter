@@ -24,8 +24,18 @@ them, so they must be decided and recorded during Roadmap Phase 0 rather than as
   declared in the root `packageManager` field. Workspace members are declared in
   `pnpm-workspace.yaml` (`packages/*`, `apps/*`), which also carries the pnpm settings — pnpm 11 reads
   settings from that file and treats `.npmrc` as auth/registry only, so no `.npmrc` exists. Internal
-  dependencies use the `workspace:*` protocol. Settings: `nodeLinker: isolated`, `pmOnFail: error`,
-  `engineStrict: true`. *(Recorded by F1.)*
+  dependencies use the `workspace:*` protocol. Six settings are declared: `nodeLinker: isolated`,
+  `pmOnFail: error`, `engineStrict: true`, `blockExoticSubdeps: true`, `minimumReleaseAge: 10080` and
+  `trustPolicy: no-downgrade`. The last three are supply-chain policy **adopted after PR #1 as a
+  Tier 1 (Semgrep) correction**, not during initial planning: `blockExoticSubdeps` makes pnpm's
+  current secure default explicit and stops transitive dependencies resolving through untrusted
+  exotic sources; `minimumReleaseAge: 10080` is a **seven-day** delay in minutes, replacing pnpm 11's
+  built-in one-day default, and because it is set explicitly pnpm's strict minimum-release-age
+  behaviour applies by default; `trustPolicy: no-downgrade` **fails installation** when a package
+  version's trust evidence is weaker than that of an earlier-published version. No exception key is
+  configured — no `minimumReleaseAgeExclude`, `trustPolicyExclude`, `trustPolicyIgnoreAfter` or
+  `trustLockfile`. Changing or excepting any of these is a security-posture decision and requires the
+  substitution procedure below. *(Recorded by F1.)*
 - **Framework/library baseline:** none for `@chatter/core`. Core is framework-neutral and carries
   no HTTP framework dependency — no Express/Fastify in Core
   ([`Architecture/Project-Context.md`](Architecture/Project-Context.md) §20). Provider SDKs are

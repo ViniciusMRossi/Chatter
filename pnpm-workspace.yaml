@@ -13,3 +13,20 @@ engineStrict: true
 
 # Strict, non-hoisted layout: a package resolves only what it declares (FR-025).
 nodeLinker: isolated
+
+# --- Supply-chain policy -------------------------------------------------------
+# Adopted after PR #1 as a Tier 1 (Semgrep) correction, not during initial planning.
+
+# Makes pnpm's current secure default explicit, and prevents transitive
+# dependencies from resolving through untrusted exotic sources.
+blockExoticSubdeps: true
+
+# Seven days, in minutes. This replaces pnpm 11's built-in one-day default with an
+# explicit seven-day delay before a newly published version may be installed.
+# Because the value is configured explicitly, pnpm's strict minimum-release-age
+# behaviour applies by default.
+minimumReleaseAge: 10080
+
+# Fail installation when a package version's trust evidence is weaker than that of
+# an earlier-published version.
+trustPolicy: no-downgrade

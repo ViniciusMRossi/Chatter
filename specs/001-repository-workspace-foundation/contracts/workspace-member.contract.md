@@ -240,5 +240,6 @@ Reference probe (documented in `quickstart.md`): add `import '@chatter/telegram'
 | Lock | `pnpm-lock.yaml` is committed; verification installs use `--frozen-lockfile` |
 | Package manager | root `packageManager` is `pnpm@11.24.0`, enforced by `pmOnFail: error` |
 | Runtime | `engineStrict: true` makes an unsatisfied `engines.node` an install failure |
+| Supply-chain policy | `pnpm-workspace.yaml` MUST declare `blockExoticSubdeps: true`, `minimumReleaseAge: 10080` and `trustPolicy: no-downgrade`, and MUST NOT declare any exception key (`minimumReleaseAgeExclude`, `trustPolicyExclude`, `trustPolicyIgnoreAfter`, `trustLockfile`). Adopted after PR #1 as a Tier 1 (Semgrep) correction |
 | Solution project | root `tsconfig.json` has `files: []` and references all eight members |
 | Root scripts | `build`, `clean`, `verify` — and `verify` claims no stage F1 does not provide |

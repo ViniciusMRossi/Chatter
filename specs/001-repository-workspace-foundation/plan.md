@@ -168,9 +168,12 @@ packages:
   - 'packages/*'
   - 'apps/*'
 
-pmOnFail: error        # fail loudly if the running pnpm differs from the declared packageManager
-engineStrict: true     # refuse to install under a Node that does not satisfy `engines`
-nodeLinker: isolated   # stated explicitly; this is what makes FR-025 true
+pmOnFail: error            # fail loudly if the running pnpm differs from the declared packageManager
+engineStrict: true         # refuse to install under a Node that does not satisfy `engines`
+nodeLinker: isolated       # stated explicitly; this is what makes FR-025 true
+blockExoticSubdeps: true   # transitive deps may not resolve through untrusted exotic sources
+minimumReleaseAge: 10080   # seven days, in minutes
+trustPolicy: no-downgrade  # fail on weakening trust evidence
 ```
 
 `bruno/` is deliberately **not** a member — it is a reserved acceptance-collection directory, not a
@@ -182,6 +185,8 @@ in the assessment brief.
 
 `nodeLinker: isolated` is pnpm's default; it is written explicitly because FR-025 depends on it and a
 future reader must see that it is load-bearing rather than incidental.
+
+The three supply-chain settings were **adopted after PR #1 as a Tier 1 (Semgrep) correction**, not during initial planning. `blockExoticSubdeps: true` makes pnpm's current secure default explicit and prevents transitive dependencies from resolving through untrusted exotic sources. `minimumReleaseAge: 10080` replaces pnpm 11's built-in one-day default with an explicit seven-day delay before a newly published version may be installed; because it is configured explicitly, pnpm's strict minimum-release-age behaviour applies by default. `trustPolicy: no-downgrade` fails installation when a package version's trust evidence is weaker than that of an earlier-published version. No exception key is set — no `minimumReleaseAgeExclude`, `trustPolicyExclude`, `trustPolicyIgnoreAfter` or `trustLockfile`.
 
 ### D2 — Root manifest
 
@@ -496,7 +501,7 @@ requirement-to-probe coverage map, are in `quickstart.md`.
 | `P-LOCK` | assertion | 2 | SHA-256 of `pnpm-lock.yaml` asserted equal before/after each of two clean installs; sorted `node_modules/.pnpm` entry lists `diff`ed between them, with a non-empty guard so the comparison cannot be vacuous | FR-026, SC-007 |
 | `P-DIVERGE` | assertion (mutating) | 3 | under a `trap`, add a dependency the lock does not know; capture the **raw** `--frozen-lockfile` status, print it as RED evidence, assert it is non-zero, assert the lock digest is unchanged, restore, assert byte-identical restoration, then assert a clean GREEN install | SC-007 |
 | `P-MEMBERS` | assertion | 4 | assert the raw project count is **9** and that exactly one project at the workspace root is named `chatter`; drop that entry and `diff` the remaining sorted **name** set — and separately the sorted repo-relative **path** set — against checked expected lists; assert `bruno/` holds only `.gitkeep` | FR-001, FR-006, SC-002 |
-| `P-MANIFESTS` | assertion | 5 | data-driven loops asserting, per library: name, version exactly `0.0.0` (D3 and contract C2.1 fix it, since nothing is released), `type: module`, `engines.node`, an `exports` map with exactly the `.` subpath and `types` declared **before** `default`, and the absence of `main`/`module`/`browser`/`publishConfig`/`private` and of publish scripts. Per application: name, `private: true`, `type: module`, `engines.node`, **absence** of `exports`, and the documented version rule (absent, or exactly the `0.0.0` fallback). For the root: `name`, `private`, `type`, `engines.node`, `packageManager`, an **exact** `typescript` devDependency with no range prefix, exactly one devDependency, zero production dependencies, and the script set being exactly `build,clean,verify` with their exact bodies | FR-002 – FR-005, FR-007, FR-012, FR-016, FR-032, FR-034 |
+| `P-MANIFESTS` | assertion | 5 | asserts the six `pnpm-workspace.yaml` settings by exact value (`pmOnFail`, `engineStrict`, `nodeLinker`, `blockExoticSubdeps`, `minimumReleaseAge`, `trustPolicy`) and that no policy-exception key is present; then data-driven loops asserting, per library: name, version exactly `0.0.0` (D3 and contract C2.1 fix it, since nothing is released), `type: module`, `engines.node`, an `exports` map with exactly the `.` subpath and `types` declared **before** `default`, and the absence of `main`/`module`/`browser`/`publishConfig`/`private` and of publish scripts. Per application: name, `private: true`, `type: module`, `engines.node`, **absence** of `exports`, and the documented version rule (absent, or exactly the `0.0.0` fallback). For the root: `name`, `private`, `type`, `engines.node`, `packageManager`, an **exact** `typescript` devDependency with no range prefix, exactly one devDependency, zero production dependencies, and the script set being exactly `build,clean,verify` with their exact bodies | FR-002 – FR-005, FR-007, FR-012, FR-016, FR-032, FR-034 |
 | `P-BUILD` | assertion | 6 | `pnpm run clean && pnpm run build`, then assert each of the six libraries emitted `.js`, `.js.map`, `.d.ts` and `.d.ts.map`, and each application emitted its entry | FR-014, FR-015, SC-003 |
 | `P-ORDER` | **inspection** | 6 | `pnpm exec tsc -b --verbose`, read by a human. Parsing compiler progress output into an assertion would be brittle, and a wrong reference graph already fails `P-EDGES`. The canonical build is unchanged | FR-017 |
 | `P-LOAD` | assertion | 7 | post-build, for each of the six libraries: `node --input-type=commonjs -e "require('<name>')"` executed with that package as the working directory, so it resolves **through the delivered `exports` map by package name**; collect every failure, then fail the probe if the collected list is non-empty | FR-013, SC-006 |
@@ -589,8 +594,8 @@ one to diagnose. This is the sequencing input for `/speckit-tasks`; it is not a 
 
 1. **Container** — extend the Dockerfile (D8); rebuild; confirm `node -v` → `v24.20.0` and
    `pnpm -v` → `11.24.0` **in a login shell** (`bash -lc`), which is what verification uses.
-2. **Root workspace** — `package.json` (D2), `pnpm-workspace.yaml` (D1); add `*.tsbuildinfo` to
-   `.gitignore`.
+2. **Root workspace** — `package.json` (D2), `pnpm-workspace.yaml` (D1, including the six settings
+   and the three supply-chain values); add `*.tsbuildinfo` to `.gitignore`.
 3. **TypeScript baseline** — `tsconfig.base.json` (D5) and the root solution `tsconfig.json` (D6),
    initially referencing nothing.
 4. **`packages/core`** — manifest, tsconfig, `src/index.ts`; add to the solution; build it alone.
@@ -665,7 +670,7 @@ happen any time after step 1 fixes the versions, but must precede step 12.
 | FR-023 | D3, D7 — `apps/example-client` is an empty module with no dependency but core; no SDK exists |
 | FR-024 | D4 — `workspace:*` protocol throughout; D13 `P-EDGES` asserts every internal dependency **value** is exactly `workspace:*`, so a registry range, `file:` path or `link:` protocol fails |
 | FR-025 | D1 — `nodeLinker: isolated` stated explicitly; demonstrated by D13 `P-UNDECLARED` |
-| FR-026 | D9 — `pnpm-lock.yaml` committed; `--frozen-lockfile` in verification; `pmOnFail: error` |
+| FR-026 | D9 — `pnpm-lock.yaml` committed; `--frozen-lockfile` in verification; `pmOnFail: error`. D1's supply-chain policy (`minimumReleaseAge`, `trustPolicy`, `blockExoticSubdeps`) is additionally enforced by pnpm at install time, which reports *"Lockfile passes supply-chain policies"* |
 | FR-027 | D8 — Node and pnpm at exact pinned versions in the image; research R2 fixes pnpm `11.24.0` |
 | FR-028 | D8 (below the sanctioned line, no parallel environment, no `compose.yaml` change) + D12 (narrow Tech-Stack recording, asserted by D13 `P-TECHSTACK`); the Dockerfile extension point itself is inspection |
 | FR-029 | D13 `P-VERIFY` — install and build succeed inside the canonical container from a cold checkout; every probe executes through `scripts/dev.sh`, and D11 confirms CI runs the same surface in the same image |

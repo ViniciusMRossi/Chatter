@@ -275,12 +275,18 @@ PROBE
 
 ## Scenario 5 · `P-MANIFESTS` — Manifest metadata conforms to the approved contract **[assertion]**
 
-**Proves**: FR-002, FR-003, FR-004, FR-005, FR-007, FR-012, FR-016, FR-032, FR-034, US2 acceptance
-scenarios 2 and 3; contract clauses C1.1, C2.1, C2.2, C3.1, C3.2 and the root rules in `plan.md` D2.
+**Proves**: FR-002, FR-003, FR-004, FR-005, FR-007, FR-012, FR-016, FR-025, FR-026, FR-032, FR-034,
+US2 acceptance scenarios 2 and 3; contract clauses C1.1, C2.1, C2.2, C3.1, C3.2 and C5, and the
+workspace/root rules in `plan.md` D1 and D2.
 
-The check is data-driven: one loop over the six libraries, one over the two applications, and one
-block for the root, with the expected values held in variables so they stay aligned with the contract
-artifact rather than being restated per package.
+The check is data-driven: the six `pnpm-workspace.yaml` settings by exact value, then one loop over
+the six libraries, one over the two applications, and one block for the root, with the expected
+values held in variables so they stay aligned with the contract artifact rather than being restated
+per package.
+
+The three supply-chain settings (`blockExoticSubdeps`, `minimumReleaseAge`, `trustPolicy`) were
+adopted after PR #1 as a Tier 1 (Semgrep) correction. The probe also fails if any policy **exception**
+key appears, so the policy cannot be quietly weakened later.
 
 ```bash
 bash scripts/dev.sh exec bash -ls <<'PROBE'
@@ -291,6 +297,28 @@ ENGINE='>=24.0.0'
 LIB_VERSION='0.0.0'
 PNPM_PIN='11.24.0'
 TS_PIN='6.0.3'
+
+# ---------------- workspace settings (pnpm-workspace.yaml) ----------------
+# Six settings, each asserted by exact value. The last three are supply-chain policy
+# adopted after PR #1 as a Tier 1 (Semgrep) correction.
+W=pnpm-workspace.yaml
+[ -f "$W" ] || fail "missing $W"
+setting() { sed -n "s/^$1:[[:space:]]*\([^[:space:]#]*\).*/\1/p" "$W" | head -1; }
+
+for pair in 'pmOnFail=error' 'engineStrict=true' 'nodeLinker=isolated' \
+            'blockExoticSubdeps=true' 'minimumReleaseAge=10080' 'trustPolicy=no-downgrade'; do
+  key="${pair%%=*}"; want="${pair#*=}"; got="$(setting "$key")"
+  [ "$got" = "$want" ] || fail "$W: $key expected '$want', got '$got'"
+done
+
+# No policy exception may be configured.
+for forbidden in minimumReleaseAgeExclude trustPolicyExclude trustPolicyIgnoreAfter trustLockfile; do
+  grep -Eq "^[[:space:]]*$forbidden[[:space:]]*:" "$W" \
+    && fail "$W declares the policy exception '$forbidden'; F1 configures none"
+done
+
+# .npmrc must not exist: pnpm 11 reads settings from pnpm-workspace.yaml only.
+[ ! -e .npmrc ] || fail ".npmrc must not exist; pnpm 11 treats it as auth/registry only"
 
 # ---------------- library packages (contract C2) ----------------
 for dir in core testing whatsapp slack telegram discord; do
@@ -385,7 +413,7 @@ scripts="$(jq -r '(.scripts // {}) | keys | sort | join(",")' "$m")"
 [ "$(jq -r '.scripts.clean' "$m")"  = "tsc -b --clean" ] || fail "root: clean must be 'tsc -b --clean'"
 [ "$(jq -r '.scripts.verify' "$m")" = "pnpm run build" ] || fail "root: verify must be 'pnpm run build'"
 
-echo "OK: 6 library, 2 application and 1 root manifest conform to D2/D3 and contract C1-C3"
+echo "OK: 6 workspace settings, and 6 library + 2 application + 1 root manifest, conform to D1/D2/D3 and contract C1-C3, C5"
 PROBE
 ```
 

@@ -20,7 +20,7 @@ The single unit of dependency resolution and build orchestration.
 |---|---|---|---|
 | members | exactly eight (see below); the workspace **root project is not a member** | `pnpm-workspace.yaml` `packages:` globs | FR-001, SC-002 |
 | root identity | `name: "chatter"`, `private: true` | root `package.json` | enumeration determinism (D2) |
-| settings | `pmOnFail: error`, `engineStrict: true`, `nodeLinker: isolated` | `pnpm-workspace.yaml` | FR-025, FR-026 |
+| settings | `pmOnFail: error`, `engineStrict: true`, `nodeLinker: isolated`, `blockExoticSubdeps: true`, `minimumReleaseAge: 10080`, `trustPolicy: no-downgrade` | `pnpm-workspace.yaml` | FR-025, FR-026 |
 | dependency lock | committed | `pnpm-lock.yaml` | FR-026 |
 | package manager | `pnpm@11.24.0` | root `package.json` `packageManager` | FR-027 |
 | root scripts | `build`, `clean`, `verify` | root `package.json` | FR-030 |
@@ -32,6 +32,12 @@ The single unit of dependency resolution and build orchestration.
 - `bruno/` is inside the repository but is **not** a member; it is a reserved acceptance-collection
   directory and must contain no collections in F1 (FR-006).
 - The root manifest is `private: true` and is not itself a publishable package.
+- The workspace carries **six** settings, not three. The last three are supply-chain policy adopted
+  after PR #1 as a Tier 1 correction: `blockExoticSubdeps: true` (transitive dependencies may not
+  resolve through untrusted exotic sources), `minimumReleaseAge: 10080` (seven days in minutes,
+  replacing pnpm 11's one-day default; strict behaviour applies because the value is explicit), and
+  `trustPolicy: no-downgrade` (installation fails when trust evidence weakens). **No exception key is
+  configured.**
 - **The workspace root is a pnpm project but not a member.** pnpm's recursive `list` reports every
   workspace project *including the root*, so its raw output has nine entries, not eight. (The
   root-exclusion behaviour of `exec`, `run`, `test` and `add` does not apply to `list`.) Any
