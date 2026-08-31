@@ -260,7 +260,7 @@ if it has been cleaned since, run `pnpm run build` before T035.
 - [x] T038 [P] Run probe **`P-CI`** per `quickstart.md` Scenario 15 — asserts `git diff --stat main -- .github/` **and** `git status --porcelain --untracked-files=all -- .github/` are both empty, so committed, staged, modified and untracked workflow files are all caught (FR-031, SC-010). F1 makes no CI change.
 - [x] T039 Record TDD evidence under `.sdd/tdd-evidence/` per `AGENTS.md`: run `bash scripts/tdd-evidence.sh skip …` with the human-reviewable rationale from `plan.md` → *Constitution Check* (F1 changes no behaviour, so a behavioural RED is not practical and must not be manufactured for `export {};`), and attach the genuine observed-failure → restore → observed-pass cycle captured by **`P-UNDECLARED`** in T032.
 - [x] T040 Record the session/feature handoff: `bash scripts/handoff.sh --summary … --next-step …` inside the container, recording verification results, the TDD skip rationale, the `P-UNDECLARED` evidence, and any blocker encountered (notably risk R-1 below).
-- [ ] T041 Open the pull request, let `quality.yml` and Tier 1 security run, and **stop for human review and merge approval**. The agent must not bypass branch protection or merge (`AGENTS.md`, `Docs/Repository-Settings.md`).
+- [x] T041 Open the pull request, let `quality.yml` and Tier 1 security run, and **stop for human review and merge approval**. The agent must not bypass branch protection or merge (`AGENTS.md`, `Docs/Repository-Settings.md`).
 
 ---
 

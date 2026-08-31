@@ -1,29 +1,29 @@
 # Handoff
 
-_Updated: 2026-08-31 19:46 UTC | harness: claude-code | reason: feature-progress_
+_Updated: 2026-08-31 22:26 UTC | harness: claude-code | reason: feature-progress_
 
 ## Current work
 - Feature/spec: 001-repository-workspace-foundation
 - Tracking issue: unspecified
 - Branch: 001-repository-workspace-foundation
-- PR: none
+- PR: https://github.com/ViniciusMRossi/chatter/pull/1
 
 ## Summary
-F1 Repository / Workspace Foundation: tasks T001-T040 complete, plus an authorized narrow correction to P-VERIFY (commit aa1f3f6). The dev image provisions pinned Node 24.20.0 (checksum-verified) and pnpm 11.24.0 in /usr/local; the frozen eight-member pnpm workspace builds with a single 'tsc -b'; the six libraries emit .js/.js.map/.d.ts/.d.ts.map; 'bash scripts/dev.sh verify' exits 0 from a genuinely cold checkout. All 16 D13 probes pass. Zero Chatter behaviour, zero provider SDKs, zero F2/F3 scope. T041 (PR) not executed; nothing pushed.
+F1 Repository / Workspace Foundation complete: T001-T041. PR #1 is open against main at HEAD 8d51eac with all three required checks green (verify pass, gitleaks pass, semgrep pass). The dev image pins Node 24.20.0 (checksum-verified) and pnpm 11.24.0; the frozen eight-member workspace builds with a single tsc -b; six libraries emit .js/.js.map/.d.ts/.d.ts.map; dev.sh verify exits 0 from a genuinely cold checkout. Zero Chatter behaviour, zero provider SDKs, zero F2/F3 scope. Not merged.
 
 ## Next step
-Codex re-review of the correction, then T041: open the PR on 001-repository-workspace-foundation, let quality.yml and Tier 1 security run, and stop for human merge approval.
+Human review and merge approval on PR #1. Do not auto-merge; the agent must not merge or bypass protection.
 
 ## Verification performed
-No test runner in F1 by design (F2 owns it). Evidence is the 16-probe D13 set, all passing: P-TOOLCHAIN, P-LOCK, P-DIVERGE, P-BUILD, P-LOAD, P-VERIFY (corrected), P-MEMBERS, P-MANIFESTS, P-EDGES, P-UNDECLARED, P-ORDER (inspection), P-BASELINE, P-ZERO, P-TECHSTACK, P-WORKFLOW, P-CI.
+No test runner in F1 by design (F2 owns it). Evidence: the 16-probe D13 set, all passing, including the extended P-MANIFESTS which now asserts all six pnpm-workspace.yaml settings by exact value and rejects any policy-exception key. CI on HEAD 8d51eac: verify pass, gitleaks pass, semgrep pass.
 
 ## TDD evidence
-- RED: Two RED observations. (1) FR-025/SC-005: pnpm run build with an undeclared import of @chatter/telegram in packages/slack/src/index.ts failed exit 1 with TS2882. (2) P-VERIFY defect, independently reproduced by Codex and again here: from a built workspace, removing node_modules and every dist while leaving member tsconfig.tsbuildinfo files made 'bash scripts/dev.sh verify' exit 0 while recreating 0 of 8 build outputs.
-- GREEN: (1) After byte-identical restore, pnpm install --frozen-lockfile && pnpm run build passed exit 0. (2) The corrected P-VERIFY, run from an intentionally stale build-info state, cleared build info itself via the approved 'pnpm run clean', invoked canonical verification (exit 0) and recreated 8 of 8 outputs with the lock digest unchanged.
+- RED: Semgrep on PR #1 HEAD 5648627 reported 3 blocking supply-chain findings on the newly introduced pnpm-workspace.yaml: pnpm-block-exotic-sub-dependencies, pnpm-missing-minimum-release-age, pnpm-trust-policy. The scan was correctly diff-aware (baseline-limited, 47 targets, file absent from main), so these were true positives, not legacy-baseline noise.
+- GREEN: After the human-authorized adoption of blockExoticSubdeps: true, minimumReleaseAge: 10080 and trustPolicy: no-downgrade, the frozen install passed with exit 0 and pnpm reported 'Lockfile passes supply-chain policies'; pnpm-lock.yaml was unchanged. Semgrep now passes on HEAD 8d51eac alongside verify and gitleaks.
 
 ## Git status
 ```text
-clean
+ M specs/001-repository-workspace-foundation/tasks.md
 ```
 
 ### Staged diff stat
@@ -32,18 +32,19 @@ none
 ```
 ### Unstaged diff stat
 ```text
-none
+ specs/001-repository-workspace-foundation/tasks.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
 ## Recent commits
 ```text
+8d51eac fix(supply-chain): adopt pnpm blockExoticSubdeps, minimumReleaseAge and trustPolicy
+5648627 docs(handoff): refresh handoff after the P-VERIFY correction
 aa1f3f6 fix(verify): make P-VERIFY establish a genuinely cold build state
 1f95532 docs(handoff): archive the previous handoff record
 b639805 docs(evidence): record F1 TDD evidence, handoff and task completion
 264fdc5 chore(verify): wire the F1 verification surface and record the stack pins
 f22fecd feat(workspace): materialize the frozen pnpm workspace and TypeScript build graph
-2ae0ae5 feat(container): add pinned Node 24.20.0 and pnpm 11.24.0 to the dev image
-75816c9 docs(spec): add F1 workspace foundation plan and tasks
 ```
 
 ## Blockers
@@ -53,5 +54,5 @@ f22fecd feat(workspace): materialize the frozen pnpm workspace and TypeScript bu
 - None recorded.
 
 ## Gotchas
-- TypeScript writes tsconfig.tsbuildinfo NEXT TO each member tsconfig.json, not inside dist/. A dist-only deletion therefore leaves stale build state and 'tsc -b' reports every project up to date, so verification can exit 0 having built nothing. P-VERIFY now runs the approved 'pnpm run clean' first and asserts no member *.tsbuildinfo survives. A real cold clone is unaffected because *.tsbuildinfo is git-ignored.
-- Observed, not designed: pnpm placed its content-addressable store at .pnpm-store/ inside the workspace because the /workspace bind mount and the /sdd-home HOME volume are different filesystems, so hard links require the store on the same filesystem. The path is git-ignored per FR-018. No compose.yaml change, no storeDir override, and the store location is NOT a public contract - it is an environment-dependent pnpm behaviour that may differ on other hosts.
+- The three pnpm supply-chain settings were adopted AFTER PR #1 as a Tier 1 Semgrep correction, not during initial planning. minimumReleaseAge: 10080 replaces pnpm 11's built-in one-day default with an explicit seven-day delay, and because it is set explicitly pnpm's strict minimum-release-age behaviour applies by default. trustPolicy: no-downgrade fails installation when a version's trust evidence is weaker than an earlier-published version. blockExoticSubdeps: true makes pnpm's current secure default explicit. No exception key is configured.
+- TypeScript writes tsconfig.tsbuildinfo NEXT TO each member tsconfig.json, not inside dist/, so a dist-only deletion leaves stale build state and verification can exit 0 having built nothing. P-VERIFY runs the approved pnpm run clean first and asserts no member tsbuildinfo survives.
